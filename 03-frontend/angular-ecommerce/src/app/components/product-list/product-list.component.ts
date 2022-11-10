@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ProductService } from 'src/app/services/product.service';
+import { CartItem } from './../../common/cart-item';
 import { Product } from './../../common/product';
+import { CartService } from './../../services/cart.service';
 
 @Component({
   selector: 'app-product-list',
@@ -15,11 +17,14 @@ export class ProductListComponent implements OnInit {
   searchMode: boolean = false;
 
   thePageNumber: number = 1;
-  thePageSize: number = 10;
+  thePageSize: number = 5;
   theTotalElements: number = 0;
+
+  previousKeyword: string = '';
 
   constructor(
     private productService: ProductService,
+    private cartService: CartService,
     private route: ActivatedRoute
   ) {}
 
@@ -42,9 +47,18 @@ export class ProductListComponent implements OnInit {
   handleSearchProducts() {
     const theKeyword = this.route.snapshot.paramMap.get('keyword');
 
-    this.productService.searchProducts(theKeyword!).subscribe((data: any) => {
-      this.products = data;
-    });
+    if (this.previousKeyword != theKeyword) {
+      this.thePageNumber = 1;
+    }
+    this.previousKeyword = theKeyword!;
+
+    this.productService
+      .searchProductListPaginate(
+        this.thePageNumber - 1,
+        this.thePageSize,
+        theKeyword!
+      )
+      .subscribe(this.processResult());
   }
 
   handleListProducts() {
@@ -72,22 +86,28 @@ export class ProductListComponent implements OnInit {
         this.thePageSize,
         this.currentCategoryId
       )
-      .subscribe((data) => {
-        this.products = data._embedded.products;
-        this.thePageNumber = data.page.number + 1;
-        this.thePageSize = data.page.size;
-        this.theTotalElements = data.page.totalElements;
-      });
-
-    // this.productService
-    //   .getProductList(this.currentCategoryId)
-    //   .subscribe((data) => {
-    //     this.products = data;
-    //   });
+      .subscribe(this.processResult());
   }
 
-  // handlePageChange(event: number): void {
-  //   this.thePageNumber = event;
-  //   this.listProducts();
-  // }
+  processResult() {
+    return (data: any) => {
+      this.products = data._embedded.products;
+      this.thePageNumber = data.page.number + 1;
+      this.thePageSize = data.page.size;
+      this.theTotalElements = data.page.totalElements;
+    };
+  }
+
+  updatePageSize(pageSize: string) {
+    this.thePageSize = +pageSize;
+    this.thePageNumber = 1;
+    this.listProducts();
+  }
+
+  addToCart(theProduct: Product) {
+    console.log(`Adding to cart: ${theProduct.name}, ${theProduct.unitPrice}`);
+    const theCartItem = new CartItem(theProduct);
+
+    this.cartService.addToCart(theCartItem);
+  }
 }
