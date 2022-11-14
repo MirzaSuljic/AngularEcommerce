@@ -10,10 +10,12 @@ import { ProductDetailsComponent } from './components/product-details/product-de
 import { ProductListComponent } from './components/product-list/product-list.component';
 import { SearchComponent } from './components/search/search.component';
 
+import { ReactiveFormsModule } from '@angular/forms';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { CartStatusComponent } from './components/cart-status/cart-status.component';
 import { CartDetailsComponent } from './components/cart-details/cart-details.component';
+import { CartStatusComponent } from './components/cart-status/cart-status.component';
+import { CheckoutComponent } from './components/checkout/checkout.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -23,6 +25,7 @@ import { CartDetailsComponent } from './components/cart-details/cart-details.com
     ProductDetailsComponent,
     CartStatusComponent,
     CartDetailsComponent,
+    CheckoutComponent,
   ],
   imports: [
     BrowserModule,
@@ -30,6 +33,7 @@ import { CartDetailsComponent } from './components/cart-details/cart-details.com
     HttpClientModule,
     NgbModule,
     NgxPaginationModule,
+    ReactiveFormsModule,
   ],
   providers: [ProductService],
   bootstrap: [AppComponent],
