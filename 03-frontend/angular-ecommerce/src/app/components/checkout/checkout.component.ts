@@ -6,6 +6,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Country } from './../../common/country';
+import { CartService } from './../../services/cart.service';
 import { CheckoutService } from './../../services/checkout.service';
 import { CheckoutValidators } from './../../validators/checkout-validators';
 
@@ -30,10 +31,13 @@ export class CheckoutComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private checkoutService: CheckoutService
+    private checkoutService: CheckoutService,
+    private cartService: CartService
   ) {}
 
   ngOnInit(): void {
+    this.reviewCartDetails();
+
     const startMonth: number = new Date().getMonth() + 1;
     this.checkoutFormGroup = this.fb.group({
       customer: this.fb.group({
@@ -127,6 +131,15 @@ export class CheckoutComponent implements OnInit {
       console.log('Retrieved countries: ' + JSON.stringify(data));
       this.countries = data;
     });
+  }
+
+  reviewCartDetails() {
+    this.cartService.totalPrice.subscribe(
+      (totalPrice) => (this.totalPrice = totalPrice)
+    );
+    this.cartService.totalQuantity.subscribe(
+      (totalQuantity) => (this.totalQuantity = totalQuantity)
+    );
   }
 
   get firstName() {
