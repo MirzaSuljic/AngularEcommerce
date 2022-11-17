@@ -24,7 +24,7 @@
                   >
                     First Name is required
                   </div>
-                  <div *ngIf="firstName && firstName.errors!['minLength']">
+                  <div *ngIf="firstName && firstName.errors!['minlength']">
                     First Name must be at least 2 characters long
                   </div>
                 </div>
@@ -50,7 +50,7 @@
                   >
                     Last Name is required
                   </div>
-                  <div *ngIf="lastName && lastName.errors!['minLength']">
+                  <div *ngIf="lastName && lastName.errors!['minlength']">
                     Last Name must be at least 2 characters long
                   </div>
                 </div>
@@ -141,7 +141,7 @@
                   <div
                     *ngIf="
                       shippingAddressStreet &&
-                      shippingAddressStreet.errors!['minLength']
+                      shippingAddressStreet.errors!['minlength']
                     "
                   >
                     Street must be at least 2 characters long
@@ -174,7 +174,7 @@
                   <div
                     *ngIf="
                       shippingAddressCity &&
-                      shippingAddressCity.errors!['minLength']
+                      shippingAddressCity.errors!['minlength']
                     "
                   >
                     City must be at least 2 characters long
@@ -239,7 +239,7 @@
                   <div
                     *ngIf="
                       shippingAddressZipCode &&
-                      shippingAddressZipCode.errors!['minLength']
+                      shippingAddressZipCode.errors!['minlength']
                     "
                   >
                     Zip Code must be at least 2 characters long
@@ -321,7 +321,7 @@
                   <div
                     *ngIf="
                       billingAddressStreet &&
-                      billingAddressStreet.errors!['minLength']
+                      billingAddressStreet.errors!['minlength']
                     "
                   >
                     Street must be at least 2 characters long
@@ -354,7 +354,7 @@
                   <div
                     *ngIf="
                       billingAddressCity &&
-                      billingAddressCity.errors!['minLength']
+                      billingAddressCity.errors!['minlength']
                     "
                   >
                     City must be at least 2 characters long
@@ -420,7 +420,7 @@
                   <div
                     *ngIf="
                       billingAddressZipCode &&
-                      billingAddressZipCode.errors!['minLength']
+                      billingAddressZipCode.errors!['minlength']
                     "
                   >
                     Zip Code must be at least 2 characters long
@@ -479,12 +479,8 @@
                   >
                     Name On Card is required
                   </div>
-                  <div
-                    *ngIf="
-                      creditCardNameOnCard &&
-                      creditCardNameOnCard.errors!['minLength']
-                    "
-                  >
+
+                  <div *ngIf="(creditCardNameOnCard?.errors)!['minlength']">
                     Name On Card must be at least 2 characters long
                   </div>
                 </div>
@@ -548,20 +544,12 @@
                   <div
                     *ngIf="
                       creditCardSecurityCode &&
-                      creditCardSecurityCode.errors!['pattern']
+                      creditCardSecurityCode.errors!['minlength']
                     "
                   >
                     Security Code must be at least 3 digits long
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-2"><label for="">Security Code</label></div>
-            <div class="col-m-9">
-              <div class="input-space">
-                <input type="text" formControlName="securityCode" />
               </div>
             </div>
           </div>

@@ -5,7 +5,13 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
+import { Router } from '@angular/router';
+import { PurchaseService } from 'src/app/services/purchase.service';
 import { Country } from './../../common/country';
+import { Order } from './../../common/order';
+import { OrderItem } from './../../common/order-item';
+import { Purchase } from './../../common/purchase';
+import { State } from './../../common/state';
 import { CartService } from './../../services/cart.service';
 import { CheckoutService } from './../../services/checkout.service';
 import { CheckoutValidators } from './../../validators/checkout-validators';
@@ -32,7 +38,9 @@ export class CheckoutComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private checkoutService: CheckoutService,
-    private cartService: CartService
+    private cartService: CartService,
+    private purchaseService: PurchaseService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -104,11 +112,11 @@ export class CheckoutComponent implements OnInit {
         ]),
         cardNumber: new FormControl('', [
           Validators.required,
-          Validators.pattern('^[0-9{16}]'),
+          Validators.pattern('^[0-9]{16}'),
         ]),
         securityCode: new FormControl('', [
           Validators.required,
-          Validators.pattern('^[0-9{3}]'),
+          Validators.pattern('^[0-9]{3}'),
         ]),
         expirationMonth: [''],
         expirationYear: [''],
@@ -256,15 +264,95 @@ export class CheckoutComponent implements OnInit {
 
     if (this.checkoutFormGroup.invalid) {
       this.checkoutFormGroup.markAllAsTouched();
+      return;
     }
-    console.log(this.checkoutFormGroup.get('customer')?.value);
-    console.log(
-      'The shipping address country is:',
-      this.checkoutFormGroup.get('shippingAddress')?.value.country.name
+
+    let order: Order = {
+      totalQuantity: this.totalQuantity,
+      totalPrice: this.totalPrice,
+    };
+
+    const cartItems = this.cartService.cartItems;
+
+    // let orderItems: OrderItem[] = [];
+    // for (let i = 0; i < cartItems.length; i++) {
+    //   orderItems[i] = new OrderItem(cartItems[i]);
+    // }
+
+    let orderItems: OrderItem[] = cartItems.map(
+      (tempCaretItem) => new OrderItem(tempCaretItem)
     );
-    console.log(
-      'The shipping address state is:',
-      this.checkoutFormGroup.get('shippingAddress')?.value.state.name
+
+    let purchase: Purchase = {
+      customer: this.checkoutFormGroup.controls['customer'].value,
+      shippingAddress: this.checkoutFormGroup.controls['shippingAddress'].value,
+      billingAddress: this.checkoutFormGroup.controls['billingAddress'].value,
+      order: order,
+      orderItems: orderItems,
+    };
+
+    const shippingState: State = JSON.parse(
+      JSON.stringify(purchase.shippingAddress.state)
     );
+    const shippingCountry: Country = JSON.parse(
+      JSON.stringify(purchase.shippingAddress.country)
+    );
+    purchase.shippingAddress.state = shippingState.name;
+    purchase.shippingAddress.country = shippingCountry.name;
+
+    const billingAddressState: State = JSON.parse(
+      JSON.stringify(purchase.billingAddress.state)
+    );
+    const billingAddressCountry: Country = JSON.parse(
+      JSON.stringify(purchase.billingAddress.country)
+    );
+    purchase.billingAddress.state = billingAddressState.name;
+    purchase.billingAddress.country = billingAddressCountry.name;
+
+    this.purchaseService.placeOrder(purchase).subscribe({
+      next: (response) => {
+        alert(
+          `Your order has been received./nOrder tracking number: ${response.orderTrackingNumber}`
+        );
+
+        this.resetCart();
+      },
+      error: (err) => {
+        alert(`There was an error: ${err.message}`);
+      },
+    });
+  }
+  resetCart() {
+    this.cartService.cartItems = [];
+    this.cartService.totalPrice.next(0);
+    this.cartService.totalQuantity.next(0);
+
+    this.checkoutFormGroup.reset();
+
+    this.router.navigateByUrl('/products');
+  }
+
+  handleMonthsAndYears() {
+    const creditCardFormGroup = this.checkoutFormGroup.get('creditCard');
+
+    const currentYear: number = new Date().getFullYear();
+    const selectedYear: number = Number(
+      creditCardFormGroup?.value.expirationYear
+    );
+
+    // if the current year equals the selected year, then start with the current month
+
+    let startMonth: number;
+
+    if (currentYear === selectedYear) {
+      startMonth = new Date().getMonth() + 1;
+    } else {
+      startMonth = 1;
+    }
+
+    this.checkoutService.getCreditCardMonths(startMonth).subscribe((data) => {
+      console.log('Retrieved credit card months: ' + JSON.stringify(data));
+      this.creditCardMonths = data;
+    });
   }
 }

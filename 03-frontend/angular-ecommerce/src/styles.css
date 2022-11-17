@@ -590,7 +590,7 @@ input.au-input.au-input-xl{
     font-size:14px;
     margin-bottom:50px
 }
-.input-space input[type=text]{
+.input-space input[type=text],.input-space input[type=number]{
     width:100%;
     height:40px;
     border-radius:30px;
