@@ -24,6 +24,8 @@ public class CheckoutServiceImpl implements CheckoutService {
     @Override
     @Transactional
     public PurchaseResponse placeOrder(Purchase purchase) {
+        
+        // what if order is null, you can add validation for this
 
         Order order = purchase.getOrder();
 
