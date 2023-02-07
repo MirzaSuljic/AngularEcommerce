@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+// I think that you don't need this class to expose entity package, just call repository and convert result to DTO or response class
 @Configuration
 public class MyDataRestConfig  implements RepositoryRestConfigurer {
 
