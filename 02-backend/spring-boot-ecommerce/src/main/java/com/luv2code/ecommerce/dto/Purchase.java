@@ -10,6 +10,7 @@ import java.util.Set;
 
 @Data
 public class Purchase {
+    // it is not good practice to send entity classes as request or responses , use something like CustomerRequest or customerDTO
     private Customer customer;
     private Address shippingAddress;
     private Address billingAddress;
