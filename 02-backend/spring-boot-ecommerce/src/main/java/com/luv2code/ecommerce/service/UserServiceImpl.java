@@ -31,6 +31,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         User user = userRepo.findByUsername(username);
         if(user == null){
             log.error("User not found in the database");
+            // you can create a global exception handling for your app check @ExceptionHandler annotation and @ControllerAdvice
             throw  new UsernameNotFoundException("User not found in the database");
         }else {
             log.info("User found in the database:{}", username);
