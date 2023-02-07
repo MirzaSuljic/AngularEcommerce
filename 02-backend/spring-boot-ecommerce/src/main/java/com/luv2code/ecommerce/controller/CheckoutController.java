@@ -5,6 +5,8 @@ import com.luv2code.ecommerce.dto.PurchaseResponse;
 import com.luv2code.ecommerce.service.CheckoutService;
 import org.springframework.web.bind.annotation.*;
 
+// add swagger https://www.baeldung.com/swagger-2-documentation-for-spring-rest-api
+
 @CrossOrigin("http://localhost:4200")
 @RestController
 @RequestMapping("/api/checkout")
