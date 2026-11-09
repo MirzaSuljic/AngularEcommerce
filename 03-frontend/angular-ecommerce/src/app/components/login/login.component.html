@@ -1,4 +1,61 @@
-<!-- Container to inject the Okta Sign-In Widget -->
-<div class="pt-5">
-  <div id="okta-sign-in-widget" class="pt-5"></div>
+<div class="page grid gap-10 pt-10 sm:pt-14 lg:grid-cols-[1fr_24rem] lg:gap-16">
+  <section class="max-w-md">
+    <h1 class="font-display text-5xl font-extrabold tracking-tight sm:text-6xl">Log in</h1>
+    <p class="mt-4 text-lg text-ink-soft">
+      Members get early access to new titles and a members-only page.
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="mt-8 space-y-5" novalidate>
+      <div>
+        <label class="field-label" for="username">Username</label>
+        <input id="username" type="text" formControlName="username" class="field-input" autocomplete="username" />
+        @if (form.controls.username.touched && form.controls.username.invalid) {
+          <p class="field-error">Username is required</p>
+        }
+      </div>
+      <div>
+        <label class="field-label" for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          class="field-input"
+          autocomplete="current-password"
+        />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <p class="field-error">Password is required</p>
+        }
+      </div>
+
+      @if (error) {
+        <p class="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">{{ error }}</p>
+      }
+
+      <button type="submit" class="btn-primary w-full py-3 text-base" [disabled]="submitting">
+        {{ submitting ? 'Logging in…' : 'Log in' }}
+      </button>
+    </form>
+  </section>
+
+  <aside class="h-fit rounded-3xl bg-sage p-6 sm:p-7">
+    <h2 class="font-display text-xl font-bold">Demo accounts</h2>
+    <p class="mt-1 text-sm text-ink-soft">The password is <strong class="text-ink">1234</strong> for each one.</p>
+    <ul class="mt-5 space-y-2">
+      @for (account of demoAccounts; track account.username) {
+        <li>
+          <button
+            type="button"
+            (click)="useDemoAccount(account)"
+            class="flex w-full items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-left transition-colors hover:ring-2 hover:ring-pine/30"
+          >
+            <span>
+              <span class="block font-semibold">{{ account.name }}</span>
+              <span class="block text-sm text-ink-soft">{{ account.username }}</span>
+            </span>
+            <span class="text-xs font-medium text-pine">{{ account.role }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  </aside>
 </div>

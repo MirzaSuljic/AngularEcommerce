@@ -1,30 +1,52 @@
-import { Component, OnInit } from '@angular/core';
-import { CartItem } from './../../common/cart-item';
-import { CartService } from './../../services/cart.service';
+import { CurrencyPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+
+import { AuthService } from '../../auth/auth.service';
+import { CartItem } from '../../common/cart-item';
+import { CartService } from '../../services/cart.service';
+import { discountAmount } from '../../services/pricing';
 
 @Component({
   selector: 'app-cart-details',
+  imports: [CurrencyPipe, RouterLink],
   templateUrl: './cart-details.component.html',
-  styleUrls: ['./cart-details.component.css'],
+  styleUrl: './cart-details.component.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
 })
 export class CartDetailsComponent implements OnInit {
-  cartItems: CartItem[] = [];
-  totalPrice: number = 0;
-  totalQuantity: number = 0;
+  private cartService = inject(CartService);
+  private auth = inject(AuthService);
 
-  constructor(private cartService: CartService) {}
+  cartItems: CartItem[] = [];
+  totalPrice = 0;
+  totalQuantity = 0;
+  loggedIn = false;
+  discountPercent = 0;
+
+  get discount(): number {
+    return discountAmount(this.totalPrice, this.discountPercent);
+  }
+
+  get total(): number {
+    return this.totalPrice - this.discount;
+  }
 
   ngOnInit(): void {
     this.listCartDetails();
+
+    this.auth.user$.subscribe((user) => {
+      this.loggedIn = !!user;
+      this.discountPercent = user?.discountPercent ?? 0;
+    });
+    this.auth.refreshUser();
   }
 
   listCartDetails() {
     this.cartItems = this.cartService.cartItems;
 
     this.cartService.totalPrice.subscribe((data) => (this.totalPrice = data));
-    this.cartService.totalQuantity.subscribe(
-      (data) => (this.totalQuantity = data)
-    );
+    this.cartService.totalQuantity.subscribe((data) => (this.totalQuantity = data));
 
     this.cartService.computeCartTotals();
   }

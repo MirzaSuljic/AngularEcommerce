@@ -1,7 +1,10 @@
-import { Injector, NgModule } from '@angular/core';
-import { Router, RouterModule, Routes } from '@angular/router';
-import { OktaAuthGuard, OktaCallbackComponent } from '@okta/okta-angular';
-import { OktaAuth } from '@okta/okta-auth-js';
+import { Routes } from '@angular/router';
+
+import { AdminCategoriesComponent } from './admin/categories/admin-categories.component';
+import { AdminLayoutComponent } from './admin/layout/admin-layout.component';
+import { AdminMembersComponent } from './admin/members/admin-members.component';
+import { AdminProductsComponent } from './admin/products/admin-products.component';
+import { adminGuard, authGuard } from './auth/auth.guard';
 import { CartDetailsComponent } from './components/cart-details/cart-details.component';
 import { CheckoutComponent } from './components/checkout/checkout.component';
 import { LoginComponent } from './components/login/login.component';
@@ -9,20 +12,19 @@ import { MembersPageComponent } from './components/members-page/members-page.com
 import { ProductDetailsComponent } from './components/product-details/product-details.component';
 import { ProductListComponent } from './components/product-list/product-list.component';
 
-function sendToLoginPage(oktaAuth: OktaAuth, injector: Injector) {
-  const router = injector.get(Router);
-
-  router.navigate(['/login']);
-}
-
-const routes: Routes = [
+export const routes: Routes = [
+  { path: 'members', component: MembersPageComponent, canActivate: [authGuard] },
   {
-    path: 'members',
-    component: MembersPageComponent,
-    canActivate: [OktaAuthGuard],
-    data: { onAuthRequired: sendToLoginPage },
+    path: 'admin',
+    component: AdminLayoutComponent,
+    canActivate: [adminGuard],
+    children: [
+      { path: '', redirectTo: 'products', pathMatch: 'full' },
+      { path: 'products', component: AdminProductsComponent },
+      { path: 'categories', component: AdminCategoriesComponent },
+      { path: 'members', component: AdminMembersComponent },
+    ],
   },
-  { path: 'login/callback', component: OktaCallbackComponent },
   { path: 'login', component: LoginComponent },
 
   { path: 'checkout', component: CheckoutComponent },
@@ -35,9 +37,3 @@ const routes: Routes = [
   { path: '', redirectTo: '/products', pathMatch: 'full' },
   { path: '**', redirectTo: '/products', pathMatch: 'full' },
 ];
-
-@NgModule({
-  imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule],
-})
-export class AppRoutingModule {}

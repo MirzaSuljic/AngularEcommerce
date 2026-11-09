@@ -1,10 +1,12 @@
 package com.luv2code.ecommerce.dto;
 
-import lombok.Data;
+import java.math.BigDecimal;
 
-@Data
-public class PurchaseResponse {
-
-    private final String orderTrackingNumber;
-
+/**
+ * @param subtotal       sum of the items at catalog prices
+ * @param memberDiscount amount taken off for logged in members (0 for guests)
+ * @param totalPrice     what the customer pays
+ */
+public record PurchaseResponse(String orderTrackingNumber, BigDecimal subtotal, BigDecimal memberDiscount,
+                               BigDecimal totalPrice) {
 }

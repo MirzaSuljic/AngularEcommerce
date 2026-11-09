@@ -1,0 +1,45 @@
+<div class="grid gap-8 lg:grid-cols-[1fr_22rem]">
+  <section class="rounded-3xl border border-line bg-white p-6 sm:p-8">
+    <h2 class="font-display text-2xl font-bold">Categories</h2>
+    <p class="mt-1 text-sm text-ink-soft">Each category is a tab in the shop header.</p>
+    <ul class="mt-6 divide-y divide-line">
+      @for (category of categories; track category.id) {
+        <li class="flex items-center justify-between py-3">
+          <span class="font-medium capitalize">{{ category.categoryName.toLowerCase() }}</span>
+          <a routerLink="/category/{{ category.id }}" class="text-sm text-pine underline underline-offset-4">
+            View in shop
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <form
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+    class="h-fit rounded-3xl bg-sage p-6 sm:p-7"
+    novalidate
+  >
+    <h2 class="font-display text-xl font-bold">Add a category</h2>
+    <div class="mt-5">
+      <label class="field-label" for="categoryName">Name</label>
+      <input id="categoryName" type="text" formControlName="categoryName" class="field-input" placeholder="e.g. Stickers" />
+      @if (form.controls.categoryName.touched && form.controls.categoryName.invalid) {
+        <p class="field-error">Enter a name of up to 40 characters</p>
+      }
+    </div>
+
+    @if (error) {
+      <p class="mt-4 rounded-xl bg-white px-4 py-3 text-sm text-danger" role="alert">{{ error }}</p>
+    }
+    @if (created) {
+      <p class="mt-4 rounded-xl bg-white px-4 py-3 text-sm text-pine" role="status">
+        Added <strong class="capitalize">{{ created.toLowerCase() }}</strong> – it is now a tab in the header.
+      </p>
+    }
+
+    <button type="submit" class="btn-primary mt-5 w-full" [disabled]="saving">
+      {{ saving ? 'Adding…' : 'Add category' }}
+    </button>
+  </form>
+</div>

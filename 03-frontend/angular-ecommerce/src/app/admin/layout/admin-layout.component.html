@@ -1,0 +1,23 @@
+<div class="page pt-10 sm:pt-14">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="font-display text-5xl font-extrabold tracking-tight sm:text-6xl">Admin</h1>
+      <p class="mt-2 text-ink-soft">Manage the catalog and the people who can sign in.</p>
+    </div>
+    <nav class="flex gap-1 rounded-full bg-sage p-1" aria-label="Admin sections">
+      @for (section of sections; track section.path) {
+        <a
+          [routerLink]="section.path"
+          routerLinkActive="!bg-white !text-pine shadow-sm"
+          class="rounded-full px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:text-ink"
+        >
+          {{ section.label }}
+        </a>
+      }
+    </nav>
+  </div>
+
+  <div class="mt-8">
+    <router-outlet />
+  </div>
+</div>

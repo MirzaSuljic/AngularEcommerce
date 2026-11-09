@@ -1,13 +1,21 @@
-<div class="form-header">
+<form class="relative" role="search" (submit)="$event.preventDefault(); doSearch(myInput.value)">
+  <label for="product-search" class="sr-only">Search products</label>
+  <svg
+    class="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-ink-soft"
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    aria-hidden="true"
+  >
+    <circle cx="9" cy="9" r="6" />
+    <path d="m14 14 4 4" stroke-linecap="round" />
+  </svg>
   <input
     #myInput
-    type="text"
-    placeholder="Search for products ..."
-    class="au-input au-input-xl"
-    (keyup.enter)="doSearch(myInput.value)"
+    id="product-search"
+    type="search"
+    placeholder="Search books, mugs, mouse pads…"
+    class="w-full rounded-full border border-line bg-paper py-2.5 pr-4 pl-10 text-sm placeholder:text-ink-soft/70 focus:border-pine focus:bg-white focus:ring-2 focus:ring-pine/20 focus:outline-none"
   />
-
-  <button (click)="doSearch(myInput.value)" class="au-btn-submit">
-    Search
-  </button>
-</div>
+</form>

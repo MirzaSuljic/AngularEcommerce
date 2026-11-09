@@ -1,21 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { ProductService } from 'src/app/services/product.service';
 
 @Component({
   selector: 'app-search',
   templateUrl: './search.component.html',
-  styleUrls: ['./search.component.css'],
+  styleUrl: './search.component.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
 })
-export class SearchComponent implements OnInit {
-  constructor(private productService: ProductService, private router: Router) {}
-
-  ngOnInit(): void {
-    // this.doSearch();
-  }
+export class SearchComponent {
+  private router = inject(Router);
 
   doSearch(value: string) {
-    console.log(`value=${value}`);
-    this.router.navigateByUrl(`/search/${value}`);
+    const keyword = value.trim();
+    if (keyword) {
+      this.router.navigateByUrl(`/search/${encodeURIComponent(keyword)}`);
+    }
   }
 }

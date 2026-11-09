@@ -1,18 +1,20 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { State } from '@popperjs/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
+
+import { environment } from '../../environments/environment';
 import { Country } from '../common/country';
+import { State } from '../common/state';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CheckoutService {
-  private countriesUrl = 'http://localhost:8080/api/countries';
-  private statesUrl = 'http://localhost:8080/api/states';
+  private http = inject(HttpClient);
 
-  constructor(private http: HttpClient) {}
+  private countriesUrl = `${environment.apiUrl}/countries`;
+  private statesUrl = `${environment.apiUrl}/states`;
 
   getCountries(): Observable<Country[]> {
     return this.http
@@ -29,7 +31,7 @@ export class CheckoutService {
   }
 
   getCreditCardMonths(startMonth: number): Observable<number[]> {
-    let data: number[] = [];
+    const data: number[] = [];
 
     for (let theMonth = startMonth; theMonth <= 12; theMonth++) {
       data.push(theMonth);
@@ -38,7 +40,7 @@ export class CheckoutService {
   }
 
   getCreditCardYears(): Observable<number[]> {
-    let data: number[] = [];
+    const data: number[] = [];
 
     const startYear: number = new Date().getFullYear();
     const endYear: number = startYear + 10;

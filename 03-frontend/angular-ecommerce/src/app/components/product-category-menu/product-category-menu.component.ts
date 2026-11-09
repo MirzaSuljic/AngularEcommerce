@@ -1,23 +1,27 @@
-import { Component, OnInit } from '@angular/core';
-import { ProductService } from 'src/app/services/product.service';
-import { ProductCategory } from './../../common/product-category';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+
+import { ProductCategory } from '../../common/product-category';
+import { ProductService } from '../../services/product.service';
 
 @Component({
   selector: 'app-product-category-menu',
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './product-category-menu.component.html',
-  styleUrls: ['./product-category-menu.component.css'],
+  styleUrl: './product-category-menu.component.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
 })
 export class ProductCategoryMenuComponent implements OnInit {
-  productCategories: ProductCategory[] = [];
+  private productService = inject(ProductService);
 
-  constructor(private productService: ProductService) {}
+  productCategories: ProductCategory[] = [];
 
   ngOnInit(): void {
     this.listProductCategories();
   }
 
   listProductCategories() {
-    this.productService.getProductCategories().subscribe((data: any) => {
+    this.productService.getProductCategories().subscribe((data) => {
       console.log('Product Categories=' + JSON.stringify(data));
       this.productCategories = data;
     });

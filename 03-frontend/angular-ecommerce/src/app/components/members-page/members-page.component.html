@@ -1,7 +1,50 @@
-<div class="main-content">
-  <div align="center" class="alert alert-warning col-md-12" role="alert">
-    <h3>Members Special</h3>
-    <p>Thank you for being a member.</p>
-    <p>Member discounts are coming soon!</p>
-  </div>
+<div class="page pt-10 sm:pt-14">
+  <section class="rounded-3xl bg-pine p-8 text-white sm:p-12">
+    <h1 class="font-display text-5xl font-extrabold tracking-tight sm:text-6xl">
+      Welcome{{ user ? ", " + user.name.split(" ")[0] : "" }}
+    </h1>
+    <p class="mt-4 max-w-xl text-lg text-white/85">
+      Thanks for being a member. Member discounts are on the way – you will see them here first.
+    </p>
+
+    @if (user) {
+      <dl class="mt-8 flex flex-wrap gap-x-10 gap-y-4 text-sm">
+        <div>
+          <dt class="text-white/60">Signed in as</dt>
+          <dd class="mt-1 font-semibold">{{ user.username }}</dd>
+        </div>
+        <div>
+          <dt class="text-white/60">Member discount</dt>
+          <dd class="mt-1 font-semibold">
+            @if (user.discountPercent > 0) {
+              <span class="rounded-full bg-marigold px-3 py-0.5 text-ink"
+                >{{ user.discountPercent }}% off every order</span
+              >
+            } @else if (isStaff) {
+              Not available for admins
+            } @else {
+              None yet
+            }
+          </dd>
+        </div>
+        <div>
+          <dt class="text-white/60">Your roles</dt>
+          <dd class="mt-1 flex flex-wrap gap-2">
+            @for (role of user.roles; track role) {
+              <span class="rounded-full bg-white/15 px-3 py-0.5 font-medium capitalize">{{
+                roleLabel(role)
+              }}</span>
+            }
+          </dd>
+        </div>
+      </dl>
+    }
+
+    <a
+      routerLink="/products"
+      class="mt-10 inline-flex rounded-full bg-marigold px-6 py-3 font-semibold text-ink hover:bg-white"
+    >
+      Browse products
+    </a>
+  </section>
 </div>

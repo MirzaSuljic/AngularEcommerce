@@ -1,85 +1,156 @@
-<div class="main-content">
-  <div class="section-content section-content-p30">
-    <div class="container-fluid">
-      <div *ngIf="cartItems.length > 0">
-        <table class="table table-bordered">
-          <tr>
-            <th width="20%">Product Image</th>
-            <th width="50%">Product Detail</th>
-            <th width="30%"></th>
-          </tr>
+<div class="page pt-10 sm:pt-14">
+  <h1 class="font-display text-5xl font-extrabold tracking-tight sm:text-6xl">Your cart</h1>
 
-          <tr *ngFor="let tempCartItem of cartItems">
-            <td>
+  @if (cartItems.length > 0) {
+    <div class="mt-8 grid gap-10 lg:grid-cols-[1fr_22rem]">
+      <ul class="divide-y divide-line border-y border-line">
+        @for (tempCartItem of cartItems; track tempCartItem.id) {
+          <li class="flex gap-4 py-5 sm:gap-6">
+            <a
+              routerLink="/products/{{ tempCartItem.id }}"
+              class="shrink-0 overflow-hidden rounded-xl bg-sage"
+            >
               <img
-                src="{{ tempCartItem.imageUrl }}"
-                class="img-responsive"
-                width="150px"
+                [src]="tempCartItem.imageUrl"
+                alt=""
+                class="size-24 object-contain p-3 mix-blend-multiply sm:size-28"
               />
-            </td>
-            <td>
-              <p>{{ tempCartItem.name }}</p>
-              <p>{{ tempCartItem.unitPrice | currency: "USD" }}</p>
-            </td>
-            <td>
-              <div class="items">
-                <label for="">Quantity: </label>
-                <div class="row no-gutters">
-                  <div class="col">
-                    <button
-                      class="btn btn-primary btn-sm"
-                      (click)="incrementQuantity(tempCartItem)"
-                    >
-                      <i class="fas fa-plus"></i>
-                    </button>
-                  </div>
-                  <div class="col ml-4 mr-2">
-                    {{ tempCartItem.quantity }}
-                  </div>
-                  <div class="col">
-                    <button
-                      class="btn btn-primary btn-sm"
-                      (click)="decrementQuantity(tempCartItem)"
-                    >
-                      <i class="fas fa-minus"></i>
-                    </button>
-                  </div>
-                  <div class="col-8"></div>
-                </div>
-              </div>
-              <button
-                class="btn btn-primary btn-sm mt-2"
-                (click)="remove(tempCartItem)"
-              >
-                Remove
-              </button>
-              <p class="mt-2">
-                Subtotal:{{
-                  tempCartItem.quantity * tempCartItem.unitPrice
-                    | currency: "USD"
-                }}
-              </p>
-            </td>
-          </tr>
+            </a>
 
-          <tr>
-            <td colspan="2"></td>
-            <td style="font-weight: bold">
-              <p>Total Quantity: {{ totalQuantity }}</p>
-              <p>Shipping: FREE</p>
-              <p>Total Price: {{ totalPrice | currency: "USD" }}</p>
-              <a routerLink="/checkout" class="btn btn-primary">Checkout</a>
-            </td>
-          </tr>
-        </table>
-      </div>
-      <div
-        *ngIf="cartItems.length == 0"
-        class="alert alert-warning col-md-12"
-        role="alert"
-      >
-        Your shopping cart is empty.
-      </div>
+            <div class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <a
+                  routerLink="/products/{{ tempCartItem.id }}"
+                  class="font-display text-lg font-semibold hover:text-pine"
+                >
+                  {{ tempCartItem.name }}
+                </a>
+                <p class="mt-0.5 text-sm text-ink-soft">
+                  {{ tempCartItem.unitPrice | currency: "USD" }} each
+                </p>
+              </div>
+
+              <div class="flex items-center gap-6">
+                <div
+                  class="flex items-center rounded-full border border-line bg-white"
+                  role="group"
+                  [attr.aria-label]="'Quantity of ' + tempCartItem.name"
+                >
+                  <button
+                    type="button"
+                    (click)="decrementQuantity(tempCartItem)"
+                    class="grid size-9 place-items-center rounded-full text-ink-soft hover:text-pine"
+                    aria-label="Decrease quantity"
+                  >
+                    <svg
+                      class="size-4"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 10h10" stroke-linecap="round" />
+                    </svg>
+                  </button>
+                  <span class="w-8 text-center text-sm font-semibold tabular-nums">{{
+                    tempCartItem.quantity
+                  }}</span>
+                  <button
+                    type="button"
+                    (click)="incrementQuantity(tempCartItem)"
+                    class="grid size-9 place-items-center rounded-full text-ink-soft hover:text-pine"
+                    aria-label="Increase quantity"
+                  >
+                    <svg
+                      class="size-4"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M10 5v10M5 10h10" stroke-linecap="round" />
+                    </svg>
+                  </button>
+                </div>
+
+                <p class="w-20 text-right font-semibold tabular-nums">
+                  {{ tempCartItem.quantity * tempCartItem.unitPrice | currency: "USD" }}
+                </p>
+
+                <button
+                  type="button"
+                  (click)="remove(tempCartItem)"
+                  class="text-sm text-ink-soft underline underline-offset-4 hover:text-danger"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </li>
+        }
+      </ul>
+
+      <aside class="h-fit rounded-3xl bg-pine p-7 text-white lg:sticky lg:top-6">
+        <h2 class="font-display text-2xl font-bold">Order summary</h2>
+        <dl class="mt-6 space-y-3 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-white/70">Items</dt>
+            <dd class="font-semibold tabular-nums">{{ totalQuantity }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-white/70">Subtotal</dt>
+            <dd class="font-semibold tabular-nums">{{ totalPrice | currency: "USD" }}</dd>
+          </div>
+          @if (discountPercent > 0) {
+            <div class="flex justify-between text-marigold">
+              <dt>Member discount ({{ discountPercent }}%)</dt>
+              <dd class="font-semibold tabular-nums">−{{ discount | currency: "USD" }}</dd>
+            </div>
+          }
+          <div class="flex justify-between">
+            <dt class="text-white/70">Shipping</dt>
+            <dd class="font-semibold">Free</dd>
+          </div>
+          <div class="flex items-baseline justify-between border-t border-white/20 pt-4">
+            <dt class="text-white/70">Total</dt>
+            <dd class="font-display text-3xl font-bold tabular-nums">
+              {{ total | currency: "USD" }}
+            </dd>
+          </div>
+        </dl>
+        @if (!loggedIn) {
+          <p class="mt-5 rounded-xl bg-white/10 px-4 py-3 text-sm text-white/85">
+            Members get a personal discount.
+            <a
+              routerLink="/login"
+              [queryParams]="{ returnUrl: '/cart-details' }"
+              class="font-semibold text-white underline"
+              >Log in</a
+            >
+            to see yours.
+          </p>
+        }
+        <a
+          routerLink="/checkout"
+          class="mt-7 flex w-full items-center justify-center rounded-full bg-marigold px-5 py-3 font-semibold text-ink transition-colors hover:bg-white"
+        >
+          Go to checkout
+        </a>
+        <a
+          routerLink="/products"
+          class="mt-3 block text-center text-sm text-white/80 hover:text-white"
+        >
+          Keep shopping
+        </a>
+      </aside>
     </div>
-  </div>
+  } @else {
+    <div class="mt-8 rounded-3xl border border-dashed border-line bg-white px-6 py-16 text-center">
+      <p class="font-display text-2xl font-bold">Your cart is empty</p>
+      <p class="mt-2 text-ink-soft">Pick a book or two and they will show up here.</p>
+      <a routerLink="/products" class="btn-primary mt-6">Browse products</a>
+    </div>
+  }
 </div>

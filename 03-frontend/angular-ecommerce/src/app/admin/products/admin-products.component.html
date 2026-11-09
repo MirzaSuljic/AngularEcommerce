@@ -1,0 +1,120 @@
+<div class="grid gap-8 lg:grid-cols-[1fr_24rem]">
+  <section class="rounded-3xl border border-line bg-white p-6 sm:p-8">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="font-display text-2xl font-bold">Products</h2>
+      <p class="text-sm text-ink-soft">{{ totalInCategory }} in this category</p>
+    </div>
+
+    @if (products.length === 0) {
+      <p class="mt-6 rounded-2xl border border-dashed border-line px-4 py-10 text-center text-ink-soft">
+        No products in this category yet. Add the first one with the form.
+      </p>
+    } @else {
+      <div class="mt-6 overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-line text-ink-soft">
+            <tr>
+              <th class="py-2 pr-4 font-medium">Product</th>
+              <th class="py-2 pr-4 font-medium">SKU</th>
+              <th class="py-2 pr-4 text-right font-medium">Price</th>
+              <th class="py-2 text-right font-medium">Stock</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            @for (product of products; track product.id) {
+              <tr [style.background-color]="created?.id === +product.id ? '#fdf3d7' : null">
+                <td class="py-2.5 pr-4">
+                  <a routerLink="/products/{{ product.id }}" class="flex items-center gap-3 hover:text-pine">
+                    <img [src]="product.imageUrl" alt="" class="size-10 rounded-lg bg-sage object-contain p-1" />
+                    <span class="font-medium">{{ product.name }}</span>
+                  </a>
+                </td>
+                <td class="py-2.5 pr-4 text-ink-soft">{{ product.sku }}</td>
+                <td class="py-2.5 pr-4 text-right tabular-nums">{{ product.unitPrice | currency: 'USD' }}</td>
+                <td class="py-2.5 text-right tabular-nums">{{ product.unitsInStock }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <form
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+    class="h-fit space-y-4 rounded-3xl bg-sage p-6 sm:p-7 lg:sticky lg:top-6"
+    novalidate
+  >
+    <h2 class="font-display text-xl font-bold">Add a product</h2>
+
+    <div>
+      <label class="field-label" for="categoryId">Category</label>
+      <select id="categoryId" formControlName="categoryId" class="field-input capitalize" (change)="loadProducts()">
+        @for (category of categories; track category.id) {
+          <option [ngValue]="category.id">{{ category.categoryName.toLowerCase() }}</option>
+        }
+      </select>
+    </div>
+
+    <div>
+      <label class="field-label" for="name">Name</label>
+      <input id="name" type="text" formControlName="name" class="field-input" placeholder="e.g. Exploring Angular" />
+      @if (showError('name')) {
+        <p class="field-error">Name is required</p>
+      }
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="field-label" for="sku">SKU</label>
+        <input id="sku" type="text" formControlName="sku" class="field-input uppercase" placeholder="BOOK-TECH-1100" />
+        @if (showError('sku')) {
+          <p class="field-error">SKU is required</p>
+        }
+      </div>
+      <div>
+        <label class="field-label" for="unitPrice">Price (USD)</label>
+        <input id="unitPrice" type="number" step="0.01" min="0.01" formControlName="unitPrice" class="field-input" />
+        @if (showError('unitPrice')) {
+          <p class="field-error">Enter a price above 0</p>
+        }
+      </div>
+    </div>
+
+    <div>
+      <label class="field-label" for="unitsInStock">Units in stock</label>
+      <input id="unitsInStock" type="number" min="0" formControlName="unitsInStock" class="field-input" />
+      @if (showError('unitsInStock')) {
+        <p class="field-error">Stock cannot be negative</p>
+      }
+    </div>
+
+    <div>
+      <label class="field-label" for="imageUrl">Image path</label>
+      <div class="flex items-center gap-3">
+        <img [src]="previewImage" alt="" class="size-12 shrink-0 rounded-lg bg-white object-contain p-1" />
+        <input id="imageUrl" type="text" formControlName="imageUrl" class="field-input" />
+      </div>
+      <p class="mt-1 text-xs text-ink-soft">A file in src/assets/images/products, or a full https:// URL.</p>
+    </div>
+
+    <div>
+      <label class="field-label" for="description">Description</label>
+      <textarea id="description" rows="3" formControlName="description" class="field-input"></textarea>
+    </div>
+
+    @if (error) {
+      <p class="rounded-xl bg-white px-4 py-3 text-sm text-danger" role="alert">{{ error }}</p>
+    }
+    @if (created) {
+      <p class="rounded-xl bg-white px-4 py-3 text-sm text-pine" role="status">
+        Added <a routerLink="/products/{{ created.id }}" class="font-semibold underline">{{ created.name }}</a> to the shop.
+      </p>
+    }
+
+    <button type="submit" class="btn-primary w-full" [disabled]="saving">
+      {{ saving ? 'Adding…' : 'Add product' }}
+    </button>
+  </form>
+</div>

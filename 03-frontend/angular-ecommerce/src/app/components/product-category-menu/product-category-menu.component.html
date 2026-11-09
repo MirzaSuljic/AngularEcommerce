@@ -1,13 +1,15 @@
-<div class="menu-sidebar-content js-scrollbar1">
-  <nav class="navbar-sidebar">
-    <ul class="list-unstyled navbar-list">
-      <li *ngFor="let tempProductCategory of productCategories">
+<nav class="page" aria-label="Product categories">
+  <ul class="-mb-px flex gap-6 overflow-x-auto text-sm font-medium">
+    @for (tempProductCategory of productCategories; track tempProductCategory.id) {
+      <li>
         <a
           routerLink="/category/{{ tempProductCategory.id }}"
-          routerLinkActive="active-link"
-          >{{ tempProductCategory.categoryName }}</a
+          routerLinkActive="!border-pine !text-pine"
+          class="block border-b-2 border-transparent py-3 whitespace-nowrap text-ink-soft capitalize transition-colors hover:text-ink"
         >
+          {{ tempProductCategory.categoryName.toLowerCase() }}
+        </a>
       </li>
-    </ul>
-  </nav>
-</div>
+    }
+  </ul>
+</nav>

@@ -1,27 +1,41 @@
-import { Component, OnInit } from '@angular/core';
+import { CurrencyPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
   FormGroup,
+  ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
-import { PurchaseService } from 'src/app/services/purchase.service';
-import { Country } from './../../common/country';
-import { Order } from './../../common/order';
-import { OrderItem } from './../../common/order-item';
-import { Purchase } from './../../common/purchase';
-import { State } from './../../common/state';
-import { CartService } from './../../services/cart.service';
-import { CheckoutService } from './../../services/checkout.service';
-import { CheckoutValidators } from './../../validators/checkout-validators';
+import { RouterLink } from '@angular/router';
+
+import { AuthService } from '../../auth/auth.service';
+import { CartItem } from '../../common/cart-item';
+import { Country } from '../../common/country';
+import { Order } from '../../common/order';
+import { OrderItem } from '../../common/order-item';
+import { Purchase } from '../../common/purchase';
+import { State } from '../../common/state';
+import { CartService } from '../../services/cart.service';
+import { CheckoutService } from '../../services/checkout.service';
+import { discountAmount } from '../../services/pricing';
+import { PurchaseResponse, PurchaseService } from '../../services/purchase.service';
+import { CheckoutValidators } from '../../validators/checkout-validators';
 
 @Component({
   selector: 'app-checkout',
+  imports: [ReactiveFormsModule, CurrencyPipe, RouterLink],
   templateUrl: './checkout.component.html',
-  styleUrls: ['./checkout.component.css'],
+  styleUrl: './checkout.component.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
 })
 export class CheckoutComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private checkoutService = inject(CheckoutService);
+  private cartService = inject(CartService);
+  private purchaseService = inject(PurchaseService);
+  private auth = inject(AuthService);
+
   checkoutFormGroup!: FormGroup;
 
   totalPrice: number = 0;
@@ -32,19 +46,37 @@ export class CheckoutComponent implements OnInit {
 
   countries: Country[] = [];
 
-  shippingAddressStates: any[] = [];
-  billingAddressStates: any[] = [];
+  submitting = false;
+  submitError = '';
+  orderTrackingNumber: string | null = null;
+  orderResult: PurchaseResponse | null = null;
 
-  constructor(
-    private fb: FormBuilder,
-    private checkoutService: CheckoutService,
-    private cartService: CartService,
-    private purchaseService: PurchaseService,
-    private router: Router
-  ) {}
+  loggedIn = false;
+  discountPercent = 0;
+
+  get discount(): number {
+    return discountAmount(this.totalPrice, this.discountPercent);
+  }
+
+  get total(): number {
+    return this.totalPrice - this.discount;
+  }
+
+  get cartItems(): CartItem[] {
+    return this.cartService.cartItems;
+  }
+
+  shippingAddressStates: State[] = [];
+  billingAddressStates: State[] = [];
 
   ngOnInit(): void {
     this.reviewCartDetails();
+
+    this.auth.user$.subscribe((user) => {
+      this.loggedIn = !!user;
+      this.discountPercent = user?.discountPercent ?? 0;
+    });
+    this.auth.refreshUser();
 
     const startMonth: number = new Date().getMonth() + 1;
     this.checkoutFormGroup = this.fb.group({
@@ -175,19 +207,19 @@ export class CheckoutComponent implements OnInit {
     return this.checkoutFormGroup.get('shippingAddress.country');
   }
   get billingAddressStreet() {
-    return this.checkoutFormGroup.get('shippingAddress.street');
+    return this.checkoutFormGroup.get('billingAddress.street');
   }
   get billingAddressCity() {
-    return this.checkoutFormGroup.get('shippingAddress.city');
+    return this.checkoutFormGroup.get('billingAddress.city');
   }
   get billingAddressState() {
-    return this.checkoutFormGroup.get('shippingAddress.state');
+    return this.checkoutFormGroup.get('billingAddress.state');
   }
   get billingAddressZipCode() {
-    return this.checkoutFormGroup.get('shippingAddress.zipCode');
+    return this.checkoutFormGroup.get('billingAddress.zipCode');
   }
   get billingAddressCountry() {
-    return this.checkoutFormGroup.get('shippingAddress.country');
+    return this.checkoutFormGroup.get('billingAddress.country');
   }
 
   get creditCardType() {
@@ -203,8 +235,8 @@ export class CheckoutComponent implements OnInit {
     return this.checkoutFormGroup.get('creditCard.securityCode');
   }
 
-  copyShippingAddressToBillingAddress(event: any) {
-    if (event.target.checked) {
+  copyShippingAddressToBillingAddress(event: Event) {
+    if ((event.target as HTMLInputElement).checked) {
       this.checkoutFormGroup.controls['billingAddress'].setValue(
         this.checkoutFormGroup.controls['shippingAddress'].value
       );
@@ -260,30 +292,29 @@ export class CheckoutComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log('Handling the submit button');
-
     if (this.checkoutFormGroup.invalid) {
       this.checkoutFormGroup.markAllAsTouched();
       return;
     }
 
-    let order: Order = {
+    const order: Order = {
       totalQuantity: this.totalQuantity,
-      totalPrice: this.totalPrice,
+      // the backend recalculates prices and the member discount; this is only a hint
+      totalPrice: this.total,
     };
 
     const cartItems = this.cartService.cartItems;
 
-    // let orderItems: OrderItem[] = [];
+    // const orderItems: OrderItem[] = [];
     // for (let i = 0; i < cartItems.length; i++) {
     //   orderItems[i] = new OrderItem(cartItems[i]);
     // }
 
-    let orderItems: OrderItem[] = cartItems.map(
+    const orderItems: OrderItem[] = cartItems.map(
       (tempCaretItem) => new OrderItem(tempCaretItem)
     );
 
-    let purchase: Purchase = {
+    const purchase: Purchase = {
       customer: this.checkoutFormGroup.controls['customer'].value,
       shippingAddress: this.checkoutFormGroup.controls['shippingAddress'].value,
       billingAddress: this.checkoutFormGroup.controls['billingAddress'].value,
@@ -309,27 +340,50 @@ export class CheckoutComponent implements OnInit {
     purchase.billingAddress.state = billingAddressState.name;
     purchase.billingAddress.country = billingAddressCountry.name;
 
+    this.submitting = true;
+    this.submitError = '';
+
     this.purchaseService.placeOrder(purchase).subscribe({
       next: (response) => {
-        alert(
-          `Your order has been received./nOrder tracking number: ${response.orderTrackingNumber}`
-        );
-
+        this.submitting = false;
+        this.orderTrackingNumber = response.orderTrackingNumber;
+        this.orderResult = response;
         this.resetCart();
       },
       error: (err) => {
-        alert(`There was an error: ${err.message}`);
+        this.submitting = false;
+        this.submitError = `The order could not be placed (${err.status || 'no connection'}). Check that the backend is running and try again.`;
       },
     });
   }
+
   resetCart() {
     this.cartService.cartItems = [];
     this.cartService.totalPrice.next(0);
     this.cartService.totalQuantity.next(0);
 
     this.checkoutFormGroup.reset();
+  }
 
-    this.router.navigateByUrl('/products');
+  // message for the first validation error of a field, shown once the field was touched
+  errorFor(path: string, label: string): string | null {
+    const control = this.checkoutFormGroup.get(path);
+    if (!control || control.valid || !(control.dirty || control.touched)) {
+      return null;
+    }
+    const errors = control.errors ?? {};
+    if (errors['required'] || errors['notOnlyWhitespace']) {
+      return `${label} is required`;
+    }
+    if (errors['minlength']) {
+      return `${label} must be at least 2 characters`;
+    }
+    if (errors['pattern']) {
+      if (path.endsWith('email')) return 'Enter a valid email address';
+      if (path.endsWith('cardNumber')) return 'Card number must be 16 digits';
+      if (path.endsWith('securityCode')) return 'Security code must be 3 digits';
+    }
+    return `${label} is invalid`;
   }
 
   handleMonthsAndYears() {

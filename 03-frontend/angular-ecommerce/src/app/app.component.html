@@ -1,45 +1,38 @@
-<div class="page-wrapper">
-  <!-- MENU SIDEBAR-->
-  <aside class="menu-sidebar d-none d-lg-block">
-    <div class="logo">
-      <a routerLink="/products">
-        <img
-          src="assets/images/logo.png"
-          alt="luv2shop"
-          class="img-responsive"
-        />
+<div class="flex min-h-screen flex-col">
+  <header class="border-b border-line bg-white">
+    <div class="page flex flex-wrap items-center gap-x-6 gap-y-3 py-4">
+      <a
+        routerLink="/products"
+        class="font-display text-2xl font-extrabold tracking-tight text-pine"
+        aria-label="luv2shop home"
+      >
+        luv2shop
       </a>
-    </div>
-    <app-product-category-menu></app-product-category-menu>
-  </aside>
-  <!-- END MENU SIDEBAR-->
-  <!-- PAGE CONTAINER-->
 
-  <div class="page-container">
-    <!-- HEADER DESKTOP-->
-    <header class="header-desktop">
-      <div class="section-content section-content-p30">
-        <div class="container-fluid">
-          <div class="header-wrap">
-            <app-search></app-search>
-            <app-login-status></app-login-status>
-            <app-cart-status></app-cart-status>
-          </div>
-          <div class="account-wrap"></div>
-        </div>
+      <app-search class="order-last w-full sm:order-none sm:w-auto sm:flex-1" />
+
+      <div class="ml-auto flex items-center gap-2 sm:ml-0">
+        <app-login-status />
+        <app-cart-status />
       </div>
-    </header>
-    <!-- END HEADER DESKTOP-->
+    </div>
 
-    <!-- MAIN CONTENT-->
-    <router-outlet></router-outlet>
-  </div>
+    <app-product-category-menu />
+  </header>
+
+  <main class="flex-1">
+    <router-outlet />
+  </main>
+
+  <footer class="mt-16 border-t border-line">
+    <div
+      class="page flex flex-col gap-2 py-8 text-sm text-ink-soft sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p>
+        <span class="font-display font-bold text-pine">luv2shop</span>
+        – books and gear for people who write code.
+      </p>
+      <p>Built with Angular 22, Spring Boot 4 and Tailwind CSS.</p>
+    </div>
+  </footer>
 </div>
-<!-- END PAGE CONTAINER-->
-<footer>
-  <ul>
-    <li><a href="#">About Us</a></li>
-    <li><a href="#">Contact Us</a></li>
-    <li><a href="#">Help</a></li>
-  </ul>
-</footer>

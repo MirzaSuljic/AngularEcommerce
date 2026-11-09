@@ -1,16 +1,100 @@
-<div class="detail-section" *ngIf="product">
-  <div class="container-fluid">
-    <img src="{{ product.imageUrl }}" class="detail-img" />
+<div class="page pt-8 sm:pt-12">
+  <a
+    routerLink="/products"
+    class="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-pine"
+  >
+    <svg
+      class="size-4"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path d="M12 5 7 10l5 5" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+    Back to products
+  </a>
 
-    <h3>{{ product.name }}</h3>
-    <div class="price">{{ product.unitPrice | currency: "USD" }}</div>
-    <button (click)="addToCart()" class="btn btn-primary btn-sm">
-      Add to cart
-    </button>
-    <hr />
-    <h4>Description</h4>
-    <p>{{ product.description }}</p>
+  @if (product) {
+    <article class="mt-6 grid gap-10 md:grid-cols-2 md:gap-14">
+      <div class="overflow-hidden rounded-3xl bg-sage">
+        <img
+          [src]="product.imageUrl"
+          [alt]="product.name"
+          class="aspect-square w-full object-contain p-12 mix-blend-multiply"
+        />
+      </div>
 
-    <a routerLink="/products" class="mt-5">Back to Product List</a>
-  </div>
+      <div class="flex flex-col md:py-6">
+        <p class="text-sm text-ink-soft">{{ product.sku }}</p>
+        <h1
+          class="mt-2 font-display text-4xl leading-tight font-extrabold tracking-tight sm:text-5xl"
+        >
+          {{ product.name }}
+        </h1>
+        @if (discountPercent > 0) {
+          <p class="mt-5 flex flex-wrap items-center gap-3">
+            <span class="price-tag text-2xl">{{ memberPrice | currency: "USD" }}</span>
+            <span class="text-lg text-ink-soft line-through">{{
+              product.unitPrice | currency: "USD"
+            }}</span>
+            <span class="rounded-full bg-pine px-3 py-1 text-xs font-semibold text-white">
+              Your member price −{{ discountPercent }}%
+            </span>
+          </p>
+        } @else {
+          <p class="mt-5">
+            <span class="price-tag text-2xl">{{ product.unitPrice | currency: "USD" }}</span>
+          </p>
+        }
+
+        <p class="mt-6 max-w-prose text-lg leading-relaxed text-ink-soft">
+          {{ product.description }}
+        </p>
+
+        <dl class="mt-8 grid max-w-sm grid-cols-2 gap-4 border-y border-line py-5 text-sm">
+          <div>
+            <dt class="text-ink-soft">Availability</dt>
+            <dd class="mt-1 font-semibold">
+              {{ product.unitsInStock > 0 ? product.unitsInStock + " in stock" : "Out of stock" }}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-ink-soft">Shipping</dt>
+            <dd class="mt-1 font-semibold">Free</dd>
+          </div>
+        </dl>
+
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            (click)="addToCart()"
+            class="rounded-full px-7 py-3 text-base font-semibold transition-colors"
+            [class]="justAdded ? 'bg-marigold text-ink' : 'bg-pine text-white hover:bg-pine-dark'"
+            [disabled]="product.unitsInStock === 0"
+          >
+            {{ justAdded ? "Added to cart" : "Add to cart" }}
+          </button>
+          @if (quantityInCart > 0) {
+            <a
+              routerLink="/cart-details"
+              class="text-sm font-medium text-pine underline underline-offset-4"
+            >
+              {{ quantityInCart }} in your cart
+            </a>
+          }
+        </div>
+      </div>
+    </article>
+  } @else {
+    <div class="mt-6 grid animate-pulse gap-10 md:grid-cols-2" aria-hidden="true">
+      <div class="aspect-square rounded-3xl bg-sage"></div>
+      <div class="space-y-4 py-6">
+        <div class="h-10 w-3/4 rounded bg-sage"></div>
+        <div class="h-6 w-24 rounded bg-sage"></div>
+        <div class="h-20 rounded bg-sage"></div>
+      </div>
+    </div>
+  }
 </div>

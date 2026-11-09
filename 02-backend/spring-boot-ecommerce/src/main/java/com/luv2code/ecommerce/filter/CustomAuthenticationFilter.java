@@ -1,65 +1,63 @@
 package com.luv2code.ecommerce.filter;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.luv2code.ecommerce.entity.User;
-import lombok.extern.slf4j.Slf4j;
+import com.luv2code.ecommerce.security.JwtTokenService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.stream.Collectors;
 
-// move this class inside security package
-
-@Slf4j
+/**
+ * Handles POST /api/login with form parameters "username" and "password".
+ * On success it returns {"access_token": "...", "refresh_token": "..."} (also as response headers).
+ * On failure Spring Security answers with 401.
+ */
 public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
-    private final AuthenticationManager authenticationManager;
 
-public CustomAuthenticationFilter(AuthenticationManager authenticationManager){
+    private static final Logger log = LoggerFactory.getLogger(CustomAuthenticationFilter.class);
 
-    this.authenticationManager = authenticationManager;
-}
-    @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
+    private final JwtTokenService jwtTokenService;
 
-        log.info("Username is : {}", username);log.info("Password is : {}", password);
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,password);
-
-        return authenticationManager.authenticate(authenticationToken);
-
+    public CustomAuthenticationFilter(AuthenticationManager authenticationManager, JwtTokenService jwtTokenService) {
+        super(authenticationManager);
+        this.jwtTokenService = jwtTokenService;
     }
 
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException, ServletException {
-        User user =(User)authentication.getPrincipal();
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+            throws AuthenticationException {
+        String username = obtainUsername(request);
+        String password = obtainPassword(request);
 
-        Algorithm algorithm = Algorithm.HMAC256("".getBytes());
-        String access_token = JWT.create()
-                .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis()+ 10*60*1000))
-                .withIssuer(request.getRequestURL().toString())
-                .withClaim("roles", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-                .sign(algorithm);
-        String refresh_token = JWT.create()
-                .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis()+ 10*60*1000))
-                .withIssuer(request.getRequestURL().toString())
-                .sign(algorithm);
+        log.info("Login attempt for username: {}", username);
+        UsernamePasswordAuthenticationToken authenticationToken =
+                UsernamePasswordAuthenticationToken.unauthenticated(username, password);
 
-        response.setHeader("access_token", access_token);
-        response.setHeader("refresh_token", refresh_token);
+        return getAuthenticationManager().authenticate(authenticationToken);
+    }
+
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+                                            FilterChain chain, Authentication authentication) throws IOException {
+        UserDetails user = (UserDetails) authentication.getPrincipal();
+
+        String accessToken = jwtTokenService.createAccessToken(user);
+        String refreshToken = jwtTokenService.createRefreshToken(user);
+
+        response.setHeader("access_token", accessToken);
+        response.setHeader("refresh_token", refreshToken);
+
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write(
+                "{\"access_token\":\"" + accessToken + "\",\"refresh_token\":\"" + refreshToken + "\"}");
     }
 }

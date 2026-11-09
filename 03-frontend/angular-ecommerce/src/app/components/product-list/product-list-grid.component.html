@@ -1,74 +1,124 @@
-<div class="main-content">
-  <div class="section-content section-content-p30">
-    <div class="container-fluid">
-      <div class="row">
-        <div *ngFor="let tempProduct of products" class="col-md-3">
-          <div class="product-box">
-            <a routerLink="/products/{{ tempProduct.id }}">
-              <img
-                src="{{ tempProduct.imageUrl }}"
-                class="img-responsive"
-                alt=""
-              />
-            </a>
-            <a routerLink="/products/{{ tempProduct.id }}">
-              <h1>{{ tempProduct.name }}</h1>
-            </a>
-            <div class="price">
-              {{ tempProduct.unitPrice | currency: "USD" }}
-            </div>
-            <button
-              (click)="addToCart(tempProduct)"
-              class="btn btn-primary btn-sm"
-            >
-              Add to cart
-            </button>
-          </div>
-        </div>
-
-        <div
-          *ngIf="products?.length == 0"
-          class="alert alert-warning col-md-12"
-          role="alert"
-        >
-          No products found.
-        </div>
-      </div>
-      <!-- begin footer -->
-      <div class="footer-pagination">
-        <div class="row">
-          <div class="col-md-6"></div>
-          <div class="col-md-6">
-            <div class="row">
-              <div class="col-md-9" style="padding: left 30%">
-                <ngb-pagination
-                  [(page)]="thePageNumber"
-                  [pageSize]="thePageSize"
-                  [collectionSize]="theTotalElements"
-                  [maxSize]="5"
-                  [boundaryLinks]="true"
-                  (pageChange)="listProducts()"
-                >
-                </ngb-pagination>
-              </div>
-              <div class="col-md-3 mt-3" style="text-align: right">
-                <span class="mr-2">Page Size</span>
-                <select
-                  #myPageSelect
-                  (change)="updatePageSize(myPageSelect.value)"
-                >
-                  <option>2</option>
-                  <option selected="true">5</option>
-                  <option>10</option>
-                  <option>20</option>
-                  <option>50</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- end footer -->
+<section class="page pt-10 pb-4 sm:pt-14">
+  <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-line pb-6">
+    <div>
+      @if (searchMode) {
+        <p class="mb-1 text-sm text-ink-soft">Search results for</p>
+      }
+      <h1
+        class="font-display text-5xl leading-[0.9] font-extrabold tracking-tight text-ink capitalize sm:text-7xl lg:text-8xl"
+      >
+        {{ searchMode ? heading : heading.toLowerCase() }}
+      </h1>
     </div>
+    <p class="pb-1 text-sm text-ink-soft">
+      @if (!loading) {
+        <span class="font-display text-2xl font-bold text-ink tabular-nums">{{ theTotalElements }}</span>
+        {{ theTotalElements === 1 ? 'product' : 'products' }}
+      }
+    </p>
   </div>
-</div>
+</section>
+
+<section class="page" aria-live="polite">
+  @if (!loading && products.length === 0) {
+    <div class="mt-6 rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center">
+      <p class="font-display text-2xl font-bold">Nothing matches that search</p>
+      <p class="mt-2 text-ink-soft">Try a shorter word, or browse a category above.</p>
+      <a routerLink="/products" class="btn-secondary mt-6">Browse all books</a>
+    </div>
+  } @else {
+    <ul class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+      @for (tempProduct of products; track tempProduct.id) {
+        <li class="group flex flex-col">
+          <a
+            routerLink="/products/{{ tempProduct.id }}"
+            class="block overflow-hidden rounded-2xl bg-sage"
+            [attr.aria-label]="tempProduct.name"
+          >
+            <img
+              [src]="tempProduct.imageUrl"
+              alt=""
+              class="aspect-[4/5] w-full object-contain p-6 mix-blend-multiply transition-transform duration-300 group-hover:scale-[1.03]"
+            />
+          </a>
+          <div class="mt-4 flex flex-1 flex-col">
+            <a
+              routerLink="/products/{{ tempProduct.id }}"
+              class="font-display text-lg leading-snug font-semibold text-ink hover:text-pine"
+            >
+              {{ tempProduct.name }}
+            </a>
+            <p class="mt-1 line-clamp-1 text-sm text-ink-soft">{{ tempProduct.description }}</p>
+            <div class="mt-auto flex items-center justify-between gap-3 pt-4">
+              <span class="price-tag">{{ tempProduct.unitPrice | currency: 'USD' }}</span>
+              <button
+                type="button"
+                (click)="addToCart(tempProduct)"
+                class="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+                [class]="
+                  justAddedId === tempProduct.id
+                    ? 'bg-marigold text-ink'
+                    : 'bg-pine text-white hover:bg-pine-dark'
+                "
+              >
+                {{ justAddedId === tempProduct.id ? 'Added' : 'Add to cart' }}
+              </button>
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (theTotalElements > 0) {
+    <div
+      class="mt-14 flex flex-col-reverse items-center justify-between gap-6 border-t border-line pt-6 sm:flex-row"
+    >
+      <label class="flex items-center gap-2 text-sm text-ink-soft">
+        Show
+        <select
+          #myPageSelect
+          (change)="updatePageSize(myPageSelect.value)"
+          class="rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink focus:border-pine focus:outline-none"
+        >
+          @for (size of pageSizeOptions; track size) {
+            <option [value]="size" [selected]="size === thePageSize">{{ size }}</option>
+          }
+        </select>
+        per page
+      </label>
+
+      @if (theTotalPages > 1) {
+        <nav class="flex items-center gap-1" aria-label="Pagination">
+          <button
+            type="button"
+            class="btn-ghost"
+            (click)="goToPage(thePageNumber - 1)"
+            [disabled]="thePageNumber === 1"
+          >
+            Previous
+          </button>
+          @for (page of pages; track page) {
+            <button
+              type="button"
+              (click)="goToPage(page)"
+              class="grid size-9 place-items-center rounded-full text-sm font-semibold tabular-nums transition-colors"
+              [class]="page === thePageNumber ? 'bg-ink text-white' : 'text-ink hover:bg-sage'"
+              [attr.aria-current]="page === thePageNumber ? 'page' : null"
+            >
+              {{ page }}
+            </button>
+          }
+          <button
+            type="button"
+            class="btn-ghost"
+            (click)="goToPage(thePageNumber + 1)"
+            [disabled]="thePageNumber === theTotalPages"
+          >
+            Next
+          </button>
+        </nav>
+      }
+    </div>
+  }
+</section>

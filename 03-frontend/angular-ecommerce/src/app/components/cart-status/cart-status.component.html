@@ -1,9 +1,21 @@
-<div class="cart-area d-n">
-  <a routerLink="/cart-details">
-    <div class="total">
-      {{ totalPrice | currency: "USD" }}
-      <span> {{ totalQuantity }}</span>
-    </div>
-    <i class="fa fa-shopping-cart" aria-hidden="true"></i>
-  </a>
-</div>
+<a
+  routerLink="/cart-details"
+  class="flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pr-4 pl-1.5 text-sm font-semibold transition-colors hover:border-pine"
+  [attr.aria-label]="'Cart, ' + totalQuantity + ' items, ' + (totalPrice | currency: 'USD')"
+>
+  <span class="relative grid size-8 place-items-center rounded-full bg-pine text-white">
+    <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <path d="M2.5 3h2l2 10h9l1.7-7H6" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="8" cy="16.5" r="1.2" fill="currentColor" />
+      <circle cx="15" cy="16.5" r="1.2" fill="currentColor" />
+    </svg>
+    @if (totalQuantity > 0) {
+      <span
+        class="absolute -top-1.5 -right-1.5 grid min-w-5 place-items-center rounded-full bg-marigold px-1 text-xs font-bold text-ink"
+      >
+        {{ totalQuantity }}
+      </span>
+    }
+  </span>
+  <span class="tabular-nums">{{ totalPrice | currency: 'USD' }}</span>
+</a>

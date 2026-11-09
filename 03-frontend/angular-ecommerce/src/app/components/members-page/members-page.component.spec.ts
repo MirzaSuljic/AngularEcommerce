@@ -1,23 +1,23 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { MembersPageComponent } from './members-page.component';
 
 describe('MembersPageComponent', () => {
-  let component: MembersPageComponent;
-  let fixture: ComponentFixture<MembersPageComponent>;
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ MembersPageComponent ]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(MembersPageComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+      imports: [MembersPageComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    }).compileComponents();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    const fixture = TestBed.createComponent(MembersPageComponent);
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

@@ -1,17 +1,26 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Purchase } from './../common/purchase';
+
+import { environment } from '../../environments/environment';
+import { Purchase } from '../common/purchase';
+
+export interface PurchaseResponse {
+  orderTrackingNumber: string;
+  subtotal: number;
+  memberDiscount: number;
+  totalPrice: number;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class PurchaseService {
-  private purchaseUrl = `http://localhost:8080/api/checkout/purchase`;
+  private http = inject(HttpClient);
 
-  constructor(private http: HttpClient) {}
+  private purchaseUrl = `${environment.apiUrl}/checkout/purchase`;
 
-  placeOrder(purchase: Purchase): Observable<any> {
-    return this.http.post<Purchase>(this.purchaseUrl, purchase);
+  placeOrder(purchase: Purchase): Observable<PurchaseResponse> {
+    return this.http.post<PurchaseResponse>(this.purchaseUrl, purchase);
   }
 }

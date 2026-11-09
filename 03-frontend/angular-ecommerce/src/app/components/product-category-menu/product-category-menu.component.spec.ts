@@ -1,23 +1,23 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { ProductCategoryMenuComponent } from './product-category-menu.component';
 
 describe('ProductCategoryMenuComponent', () => {
-  let component: ProductCategoryMenuComponent;
-  let fixture: ComponentFixture<ProductCategoryMenuComponent>;
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ProductCategoryMenuComponent ]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(ProductCategoryMenuComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+      imports: [ProductCategoryMenuComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    }).compileComponents();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    const fixture = TestBed.createComponent(ProductCategoryMenuComponent);
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

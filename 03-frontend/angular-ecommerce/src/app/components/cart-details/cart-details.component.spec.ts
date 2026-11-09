@@ -1,23 +1,23 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { CartDetailsComponent } from './cart-details.component';
 
 describe('CartDetailsComponent', () => {
-  let component: CartDetailsComponent;
-  let fixture: ComponentFixture<CartDetailsComponent>;
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ CartDetailsComponent ]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(CartDetailsComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+      imports: [CartDetailsComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    }).compileComponents();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    const fixture = TestBed.createComponent(CartDetailsComponent);
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

@@ -1,16 +1,18 @@
 package com.luv2code.ecommerce.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
-import javax.persistence.*;
 import java.util.List;
 
 @Entity
 @Table(name = "country")
-@Setter
-@Getter
 public class Country {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,4 +28,16 @@ public class Country {
     @OneToMany(mappedBy = "country")
     @JsonIgnore
     private List<State> states;
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public List<State> getStates() { return states; }
+    public void setStates(List<State> states) { this.states = states; }
 }

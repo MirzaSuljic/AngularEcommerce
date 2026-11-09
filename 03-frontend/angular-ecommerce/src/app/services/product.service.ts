@@ -1,28 +1,42 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
+
+import { environment } from '../../environments/environment';
 import { Product } from '../common/product';
-import { ProductCategory } from './../common/product-category';
+import { ProductCategory } from '../common/product-category';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ProductService {
-  private baseUrl = 'http://localhost:8080/api/products';
-  private categoryUrl = 'http://localhost:8080/api/product-category';
+  private http = inject(HttpClient);
 
-  constructor(private http: HttpClient) {}
+  private baseUrl = `${environment.apiUrl}/products`;
+  private categoryUrl = `${environment.apiUrl}/product-category`;
 
   getProductList(theCategoryId: number): Observable<Product[]> {
     const searchUrl = `${this.baseUrl}/search/findByCategoryId?id=${theCategoryId}`;
     return this.getProducts(searchUrl);
   }
 
+  // categories are loaded once and shared by the menu, the product list and the admin panel;
+  // reloadCategories() refreshes everyone after an admin adds a category
+  private categoriesSubject = new BehaviorSubject<ProductCategory[] | null>(null);
+
   getProductCategories(): Observable<ProductCategory[]> {
-    return this.http
+    if (this.categoriesSubject.value === null) {
+      this.reloadCategories();
+    }
+    return this.categoriesSubject.pipe(filter((c): c is ProductCategory[] => c !== null));
+  }
+
+  reloadCategories() {
+    this.http
       .get<GetResponseProductCategory>(this.categoryUrl)
-      .pipe(map((response) => response._embedded.productCategory));
+      .pipe(map((response) => response._embedded?.productCategory ?? []))
+      .subscribe((categories) => this.categoriesSubject.next(categories));
   }
 
   searchProducts(theKeyword: string): Observable<Product[]> {
@@ -60,12 +74,13 @@ export class ProductService {
   private getProducts(searchUrl: string): Observable<Product[]> {
     return this.http
       .get<GetResponseProducts>(searchUrl)
-      .pipe(map((response) => response._embedded.products));
+      .pipe(map((response) => response._embedded?.products ?? []));
   }
 }
 
-interface GetResponseProducts {
-  _embedded: {
+export interface GetResponseProducts {
+  // Spring Data REST leaves out "_embedded" when a page is empty
+  _embedded?: {
     products: Product[];
   };
 
@@ -78,7 +93,7 @@ interface GetResponseProducts {
 }
 
 interface GetResponseProductCategory {
-  _embedded: {
+  _embedded?: {
     productCategory: ProductCategory[];
   };
 }

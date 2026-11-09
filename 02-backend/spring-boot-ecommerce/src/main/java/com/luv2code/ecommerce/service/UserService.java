@@ -13,4 +13,6 @@ public interface UserService {
     User getUser(String username);
     List<User>getUsers();
 
+    void setDiscount(String username, int discountPercent);
+
 }
