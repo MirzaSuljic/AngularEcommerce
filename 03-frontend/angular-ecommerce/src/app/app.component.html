@@ -26,13 +26,17 @@
 
   <footer class="mt-16 border-t border-line">
     <div
-      class="page flex flex-col gap-2 py-8 text-sm text-ink-soft sm:flex-row sm:items-center sm:justify-between"
+      class="page flex flex-col gap-6 py-8 text-sm text-ink-soft sm:flex-row sm:items-center sm:justify-between"
     >
       <p>
         <span class="font-display font-bold text-pine">luv2shop</span>
         – books and gear for people who write code.
       </p>
-      <p>Built with Angular 22, Spring Boot 4 and Tailwind CSS.</p>
+      <nav class="flex gap-5" aria-label="Footer">
+        <a routerLink="/about" class="hover:text-pine">About</a>
+        <a routerLink="/contact" class="hover:text-pine">Contact</a>
+        <a routerLink="/members" class="hover:text-pine">Members</a>
+      </nav>
     </div>
   </footer>
 </div>

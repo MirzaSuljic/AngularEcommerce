@@ -12,14 +12,52 @@
     </div>
     <p class="pb-1 text-sm text-ink-soft">
       @if (!loading) {
-        <span class="font-display text-2xl font-bold text-ink tabular-nums">{{ theTotalElements }}</span>
-        {{ theTotalElements === 1 ? 'product' : 'products' }}
+        <span class="font-display text-2xl font-bold text-ink tabular-nums">{{
+          theTotalElements
+        }}</span>
+        {{ theTotalElements === 1 ? "product" : "products" }}
       }
     </p>
   </div>
 </section>
 
-<section class="page" aria-live="polite">
+<section id="product-results" class="page scroll-mt-4" aria-live="polite">
+  @if (pricing.memberPercent > 0) {
+    <p class="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-pine px-5 py-3 text-sm text-white">
+      <span class="rounded-full bg-marigold px-2.5 py-0.5 font-bold text-ink">−{{ pricing.memberPercent }}%</span>
+      @if (pricing.memberAppliesToAll) {
+        Your member discount is applied to every eligible price below.
+      } @else {
+        Your member discount applies to selected products – look for the “Member” badge.
+      }
+    </p>
+  }
+  @if (theTotalElements > 0) {
+    <div class="mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+      <p class="text-sm text-ink-soft">
+        Showing
+        <span class="font-semibold text-ink tabular-nums">{{ firstItem }}–{{ lastItem }}</span>
+        of <span class="font-semibold text-ink tabular-nums">{{ theTotalElements }}</span>
+      </p>
+
+      <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+        <label class="flex items-center gap-2 text-sm text-ink-soft">
+          Per page
+          <select
+            #pageSizeSelect
+            (change)="updatePageSize(pageSizeSelect.value)"
+            class="rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink focus:border-pine focus:outline-none"
+          >
+            @for (size of pageSizeOptions; track size) {
+              <option [value]="size" [selected]="size === thePageSize">{{ size }}</option>
+            }
+          </select>
+        </label>
+        <ng-container *ngTemplateOutlet="pager; context: { $implicit: false }" />
+      </div>
+    </div>
+  }
+
   @if (!loading && products.length === 0) {
     <div class="mt-6 rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center">
       <p class="font-display text-2xl font-bold">Nothing matches that search</p>
@@ -32,9 +70,28 @@
         <li class="group flex flex-col">
           <a
             routerLink="/products/{{ tempProduct.id }}"
-            class="block overflow-hidden rounded-2xl bg-sage"
+            class="relative block overflow-hidden rounded-2xl bg-sage"
             [attr.aria-label]="tempProduct.name"
           >
+            @let priceInfo = pricing.info(tempProduct);
+            @if (priceInfo.percent > 0) {
+              <span class="absolute top-3 left-3 z-10 flex flex-col items-start gap-1.5">
+                @if (priceInfo.salePercent > 0) {
+                  <span
+                    class="rounded-full bg-ink px-2.5 py-1 text-xs font-bold text-white"
+                  >
+                    Sale −{{ priceInfo.salePercent }}%
+                  </span>
+                }
+                @if (priceInfo.memberPercent > 0) {
+                  <span
+                    class="rounded-full bg-pine px-2.5 py-1 text-xs font-bold text-white"
+                  >
+                    Member −{{ priceInfo.memberPercent }}%
+                  </span>
+                }
+              </span>
+            }
             <img
               [src]="tempProduct.imageUrl"
               alt=""
@@ -50,7 +107,7 @@
             </a>
             <p class="mt-1 line-clamp-1 text-sm text-ink-soft">{{ tempProduct.description }}</p>
             <div class="mt-auto flex items-center justify-between gap-3 pt-4">
-              <span class="price-tag">{{ tempProduct.unitPrice | currency: 'USD' }}</span>
+              <app-price [item]="tempProduct" />
               <button
                 type="button"
                 (click)="addToCart(tempProduct)"
@@ -61,7 +118,7 @@
                     : 'bg-pine text-white hover:bg-pine-dark'
                 "
               >
-                {{ justAddedId === tempProduct.id ? 'Added' : 'Add to cart' }}
+                {{ justAddedId === tempProduct.id ? "Added" : "Add to cart" }}
               </button>
             </div>
           </div>
@@ -70,55 +127,64 @@
     </ul>
   }
 
-  @if (theTotalElements > 0) {
-    <div
-      class="mt-14 flex flex-col-reverse items-center justify-between gap-6 border-t border-line pt-6 sm:flex-row"
-    >
-      <label class="flex items-center gap-2 text-sm text-ink-soft">
-        Show
-        <select
-          #myPageSelect
-          (change)="updatePageSize(myPageSelect.value)"
-          class="rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink focus:border-pine focus:outline-none"
-        >
-          @for (size of pageSizeOptions; track size) {
-            <option [value]="size" [selected]="size === thePageSize">{{ size }}</option>
-          }
-        </select>
-        per page
-      </label>
-
-      @if (theTotalPages > 1) {
-        <nav class="flex items-center gap-1" aria-label="Pagination">
-          <button
-            type="button"
-            class="btn-ghost"
-            (click)="goToPage(thePageNumber - 1)"
-            [disabled]="thePageNumber === 1"
-          >
-            Previous
-          </button>
-          @for (page of pages; track page) {
-            <button
-              type="button"
-              (click)="goToPage(page)"
-              class="grid size-9 place-items-center rounded-full text-sm font-semibold tabular-nums transition-colors"
-              [class]="page === thePageNumber ? 'bg-ink text-white' : 'text-ink hover:bg-sage'"
-              [attr.aria-current]="page === thePageNumber ? 'page' : null"
-            >
-              {{ page }}
-            </button>
-          }
-          <button
-            type="button"
-            class="btn-ghost"
-            (click)="goToPage(thePageNumber + 1)"
-            [disabled]="thePageNumber === theTotalPages"
-          >
-            Next
-          </button>
-        </nav>
-      }
+  @if (theTotalPages > 1) {
+    <div class="mt-14 flex justify-center border-t border-line pt-6 sm:justify-end">
+      <ng-container *ngTemplateOutlet="pager; context: { $implicit: true }" />
     </div>
   }
 </section>
+
+<!-- page navigation, used above and below the grid; scrollToTop is true for the bottom one -->
+<ng-template #pager let-scrollToTop>
+  @if (theTotalPages > 1) {
+    <nav class="flex items-center gap-1" aria-label="Pagination">
+      <button
+        type="button"
+        class="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-sage hover:text-ink disabled:pointer-events-none disabled:opacity-30"
+        (click)="goToPage(thePageNumber - 1, scrollToTop)"
+        [disabled]="thePageNumber === 1"
+        aria-label="Previous page"
+      >
+        <svg
+          class="size-4"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M12 5 7 10l5 5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      @for (page of pages; track page) {
+        <button
+          type="button"
+          (click)="goToPage(page, scrollToTop)"
+          class="grid size-9 place-items-center rounded-full text-sm font-semibold tabular-nums transition-colors"
+          [class]="page === thePageNumber ? 'bg-ink text-white' : 'text-ink hover:bg-sage'"
+          [attr.aria-current]="page === thePageNumber ? 'page' : null"
+        >
+          {{ page }}
+        </button>
+      }
+      <button
+        type="button"
+        class="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-sage hover:text-ink disabled:pointer-events-none disabled:opacity-30"
+        (click)="goToPage(thePageNumber + 1, scrollToTop)"
+        [disabled]="thePageNumber === theTotalPages"
+        aria-label="Next page"
+      >
+        <svg
+          class="size-4"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="m8 5 5 5-5 5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </nav>
+  }
+</ng-template>

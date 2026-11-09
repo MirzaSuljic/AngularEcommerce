@@ -26,18 +26,15 @@ public class CheckoutController {
         this.userService = userService;
     }
 
-    // guests can buy too; with a valid JWT the buyer's member discount (set by an admin) is applied
+    // guests can buy too (sale prices apply); with a valid JWT the buyer's member discount is applied as well
     @PostMapping("/purchase")
     public PurchaseResponse placeOrder(@RequestBody Purchase purchase, Authentication authentication) {
-        int discountPercent = 0;
+        User buyer = null;
         if (authentication != null && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
-            User user = userService.getUser(authentication.getName());
-            if (user != null) {
-                discountPercent = user.getEffectiveDiscountPercent();
-            }
+            buyer = userService.getUser(authentication.getName());
         }
 
-        return checkoutService.placeOrder(purchase, discountPercent);
+        return checkoutService.placeOrder(purchase, buyer);
     }
 }

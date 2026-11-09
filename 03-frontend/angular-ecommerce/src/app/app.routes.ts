@@ -3,10 +3,13 @@ import { Routes } from '@angular/router';
 import { AdminCategoriesComponent } from './admin/categories/admin-categories.component';
 import { AdminLayoutComponent } from './admin/layout/admin-layout.component';
 import { AdminMembersComponent } from './admin/members/admin-members.component';
+import { AdminMessagesComponent } from './admin/messages/admin-messages.component';
 import { AdminProductsComponent } from './admin/products/admin-products.component';
 import { adminGuard, authGuard } from './auth/auth.guard';
+import { AboutComponent } from './components/about/about.component';
 import { CartDetailsComponent } from './components/cart-details/cart-details.component';
 import { CheckoutComponent } from './components/checkout/checkout.component';
+import { ContactComponent } from './components/contact/contact.component';
 import { LoginComponent } from './components/login/login.component';
 import { MembersPageComponent } from './components/members-page/members-page.component';
 import { ProductDetailsComponent } from './components/product-details/product-details.component';
@@ -23,9 +26,12 @@ export const routes: Routes = [
       { path: 'products', component: AdminProductsComponent },
       { path: 'categories', component: AdminCategoriesComponent },
       { path: 'members', component: AdminMembersComponent },
+      { path: 'messages', component: AdminMessagesComponent },
     ],
   },
   { path: 'login', component: LoginComponent },
+  { path: 'about', component: AboutComponent, title: 'About – luv2shop' },
+  { path: 'contact', component: ContactComponent, title: 'Contact – luv2shop' },
 
   { path: 'checkout', component: CheckoutComponent },
   { path: 'products/:id', component: ProductDetailsComponent },

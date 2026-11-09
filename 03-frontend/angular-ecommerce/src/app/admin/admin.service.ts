@@ -12,6 +12,8 @@ export interface Member {
   discountPercent: number;
   /** false for admins and super admins */
   discountEligible: boolean;
+  /** products the discount applies to; empty = every product */
+  discountProductIds: number[];
 }
 
 export interface NewMember {
@@ -22,6 +24,16 @@ export interface NewMember {
   discountPercent: number;
 }
 
+export interface ContactMessage {
+  id: number;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  dateCreated: string;
+  handled: boolean;
+}
+
 export interface NewProduct {
   name: string;
   sku: string;
@@ -30,6 +42,8 @@ export interface NewProduct {
   unitsInStock: number;
   imageUrl: string;
   categoryId: number;
+  salePercent: number;
+  memberDiscountEnabled: boolean;
 }
 
 /** Calls the admin-only endpoints under /api/admin (the auth interceptor adds the JWT). */
@@ -52,10 +66,30 @@ export class AdminService {
     return this.http.post<Member>(`${this.baseUrl}/users`, member);
   }
 
-  setDiscount(username: string, discountPercent: number): Observable<Member> {
+  /** productIds empty = the discount applies to every product */
+  setDiscount(username: string, discountPercent: number, productIds: number[] = []): Observable<Member> {
     return this.http.put<Member>(`${this.baseUrl}/users/${encodeURIComponent(username)}/discount`, {
       discountPercent,
+      productIds,
     });
+  }
+
+  setProductDiscounts(
+    productId: number,
+    discounts: { salePercent: number; memberDiscountEnabled: boolean }
+  ): Observable<{ id: number; name: string; categoryId: number }> {
+    return this.http.put<{ id: number; name: string; categoryId: number }>(
+      `${this.baseUrl}/products/${productId}/discounts`,
+      discounts
+    );
+  }
+
+  getMessages(): Observable<ContactMessage[]> {
+    return this.http.get<ContactMessage[]>(`${this.baseUrl}/messages`);
+  }
+
+  setMessageHandled(id: number, handled: boolean): Observable<ContactMessage> {
+    return this.http.put<ContactMessage>(`${this.baseUrl}/messages/${id}/handled`, { handled });
   }
 
   createCategory(categoryName: string): Observable<{ id: number; categoryName: string }> {

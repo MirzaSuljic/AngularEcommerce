@@ -8,7 +8,8 @@ import { Purchase } from '../common/purchase';
 export interface PurchaseResponse {
   orderTrackingNumber: string;
   subtotal: number;
-  memberDiscount: number;
+  /** saved through sales and the member discount */
+  discount: number;
   totalPrice: number;
 }
 

@@ -17,9 +17,10 @@
           <dt class="text-white/60">Member discount</dt>
           <dd class="mt-1 font-semibold">
             @if (user.discountPercent > 0) {
-              <span class="rounded-full bg-marigold px-3 py-0.5 text-ink"
-                >{{ user.discountPercent }}% off every order</span
-              >
+              <span class="rounded-full bg-marigold px-3 py-0.5 text-ink">
+                {{ user.discountPercent }}% off
+                {{ user.discountProductIds.length ? user.discountProductIds.length + ' selected products' : 'every product' }}
+              </span>
             } @else if (isStaff) {
               Not available for admins
             } @else {

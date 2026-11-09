@@ -52,7 +52,8 @@ public class SpringBootEcommerceApplication {
 
 			// member discounts for regular users (admins never get one)
 			userService.setDiscount("john", 10);
-			userService.setDiscount("will", 5);
+			// will's 15% only applies to the first five coffee mugs (product ids 26-30)
+			userService.setDiscount("will", 15, java.util.Set.of(26L, 27L, 28L, 29L, 30L));
 		};
 	}
 

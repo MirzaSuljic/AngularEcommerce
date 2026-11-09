@@ -15,4 +15,6 @@ public interface UserService {
 
     void setDiscount(String username, int discountPercent);
 
+    void setDiscount(String username, int discountPercent, java.util.Set<Long> productIds);
+
 }

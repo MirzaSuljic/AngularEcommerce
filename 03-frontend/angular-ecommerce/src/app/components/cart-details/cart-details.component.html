@@ -26,7 +26,7 @@
                   {{ tempCartItem.name }}
                 </a>
                 <p class="mt-0.5 text-sm text-ink-soft">
-                  {{ tempCartItem.unitPrice | currency: "USD" }} each
+                  <app-price [item]="tempCartItem" size="inline" />
                 </p>
               </div>
 
@@ -75,8 +75,16 @@
                   </button>
                 </div>
 
-                <p class="w-20 text-right font-semibold tabular-nums">
-                  {{ tempCartItem.quantity * tempCartItem.unitPrice | currency: "USD" }}
+                @let line = pricing.info(tempCartItem);
+                <p class="w-24 text-right tabular-nums">
+                  @if (line.percent > 0) {
+                    <span class="block text-xs text-ink-soft line-through">
+                      {{ tempCartItem.quantity * line.original | currency: "USD" }}
+                    </span>
+                  }
+                  <span class="block font-semibold">
+                    {{ tempCartItem.quantity * line.price | currency: "USD" }}
+                  </span>
                 </p>
 
                 <button
@@ -101,12 +109,12 @@
           </div>
           <div class="flex justify-between">
             <dt class="text-white/70">Subtotal</dt>
-            <dd class="font-semibold tabular-nums">{{ totalPrice | currency: "USD" }}</dd>
+            <dd class="font-semibold tabular-nums">{{ totals.subtotal | currency: "USD" }}</dd>
           </div>
-          @if (discountPercent > 0) {
+          @if (totals.discount > 0) {
             <div class="flex justify-between text-marigold">
-              <dt>Member discount ({{ discountPercent }}%)</dt>
-              <dd class="font-semibold tabular-nums">−{{ discount | currency: "USD" }}</dd>
+              <dt>Discounts</dt>
+              <dd class="font-semibold tabular-nums">−{{ totals.discount | currency: "USD" }}</dd>
             </div>
           }
           <div class="flex justify-between">
@@ -116,7 +124,7 @@
           <div class="flex items-baseline justify-between border-t border-white/20 pt-4">
             <dt class="text-white/70">Total</dt>
             <dd class="font-display text-3xl font-bold tabular-nums">
-              {{ total | currency: "USD" }}
+              {{ totals.total | currency: "USD" }}
             </dd>
           </div>
         </dl>

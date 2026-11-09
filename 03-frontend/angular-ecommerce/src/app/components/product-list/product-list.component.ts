@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { take } from 'rxjs/operators';
@@ -6,11 +6,13 @@ import { take } from 'rxjs/operators';
 import { CartItem } from '../../common/cart-item';
 import { Product } from '../../common/product';
 import { CartService } from '../../services/cart.service';
+import { PricingService } from '../../services/pricing';
+import { PriceComponent } from '../price/price.component';
 import { GetResponseProducts, ProductService } from '../../services/product.service';
 
 @Component({
   selector: 'app-product-list',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [RouterLink, NgTemplateOutlet, PriceComponent],
   templateUrl: './product-list-grid.component.html',
   styleUrl: './product-list.component.css',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -19,6 +21,7 @@ export class ProductListComponent implements OnInit {
   private productService = inject(ProductService);
   private cartService = inject(CartService);
   private route = inject(ActivatedRoute);
+  readonly pricing = inject(PricingService);
 
   readonly pageSizeOptions = [4, 8, 12, 24];
 
@@ -49,6 +52,14 @@ export class ProductListComponent implements OnInit {
 
   get heading(): string {
     return this.searchMode ? `“${this.keyword}”` : this.currentCategoryName;
+  }
+
+  get firstItem(): number {
+    return this.theTotalElements === 0 ? 0 : (this.thePageNumber - 1) * this.thePageSize + 1;
+  }
+
+  get lastItem(): number {
+    return Math.min(this.thePageNumber * this.thePageSize, this.theTotalElements);
   }
 
   get pages(): number[] {
@@ -124,12 +135,20 @@ export class ProductListComponent implements OnInit {
     };
   }
 
-  goToPage(page: number) {
+  goToPage(page: number, scrollToTop = false) {
     if (page < 1 || page > this.theTotalPages || page === this.thePageNumber) {
       return;
     }
     this.thePageNumber = page;
     this.listProducts();
+
+    // from the bottom pager, bring the new page into view
+    if (scrollToTop) {
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      document
+        .getElementById('product-results')
+        ?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    }
   }
 
   updatePageSize(pageSize: string) {

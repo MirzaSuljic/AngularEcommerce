@@ -1,0 +1,52 @@
+@let p = info;
+@switch (size()) {
+  @case ('inline') {
+    <span class="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+      @if (p.percent > 0) {
+        <span class="line-through">{{ p.original | currency: 'USD' }}</span>
+      }
+      <span [class.font-semibold]="p.percent > 0" [class.text-ink]="p.percent > 0">
+        {{ p.price | currency: 'USD' }} each
+      </span>
+      @if (showBadge()) {
+        @if (p.salePercent > 0) {
+          <span class="rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-white">Sale −{{ p.salePercent }}%</span>
+        }
+        @if (p.memberPercent > 0) {
+          <span class="rounded-full bg-pine px-2 py-0.5 text-xs font-bold text-white">Member −{{ p.memberPercent }}%</span>
+        }
+      }
+    </span>
+  }
+  @default {
+    <span class="flex flex-col items-start gap-1">
+      @if (p.percent > 0) {
+        <span
+          class="tabular-nums text-ink-soft line-through"
+          [class.text-lg]="size() === 'large'"
+          [class.text-sm]="size() !== 'large'"
+        >
+          {{ p.original | currency: 'USD' }}
+        </span>
+      }
+      <span class="flex flex-wrap items-center gap-2">
+        <span class="price-tag" [class.text-2xl]="size() === 'large'">{{ p.price | currency: 'USD' }}</span>
+        @if (p.percent > 0 && showBadge() && size() === 'large') {
+          @if (p.salePercent > 0) {
+            <span class="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">On sale −{{ p.salePercent }}%</span>
+          }
+          @if (p.memberPercent > 0) {
+            <span class="rounded-full bg-pine px-3 py-1 text-xs font-semibold text-white">
+              Your member discount −{{ p.memberPercent }}%
+            </span>
+          }
+        }
+      </span>
+      @if (showBadge() && size() === 'large' && p.source === 'both') {
+        <span class="text-sm text-ink-soft">
+          Your member discount is taken off the sale price – {{ p.percent }}% off in total.
+        </span>
+      }
+    </span>
+  }
+}

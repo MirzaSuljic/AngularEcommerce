@@ -12,5 +12,6 @@ export class AdminLayoutComponent {
     { path: 'products', label: 'Products' },
     { path: 'categories', label: 'Categories' },
     { path: 'members', label: 'Members' },
+    { path: 'messages', label: 'Messages' },
   ];
 }

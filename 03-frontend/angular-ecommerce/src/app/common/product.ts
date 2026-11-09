@@ -1,4 +1,9 @@
 export class Product {
+  /** sale discount in percent for everyone (0 = no sale) */
+  salePercent?: number;
+  /** false when an admin switched member discounts off for this product */
+  memberDiscountEnabled?: boolean;
+
   constructor(
     public id: string,
     public sku: string,

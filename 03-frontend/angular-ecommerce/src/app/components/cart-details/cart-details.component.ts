@@ -5,11 +5,12 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
 import { CartItem } from '../../common/cart-item';
 import { CartService } from '../../services/cart.service';
-import { discountAmount } from '../../services/pricing';
+import { PricingService } from '../../services/pricing';
+import { PriceComponent } from '../price/price.component';
 
 @Component({
   selector: 'app-cart-details',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, PriceComponent],
   templateUrl: './cart-details.component.html',
   styleUrl: './cart-details.component.css',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -17,28 +18,22 @@ import { discountAmount } from '../../services/pricing';
 export class CartDetailsComponent implements OnInit {
   private cartService = inject(CartService);
   private auth = inject(AuthService);
+  readonly pricing = inject(PricingService);
 
   cartItems: CartItem[] = [];
   totalPrice = 0;
   totalQuantity = 0;
   loggedIn = false;
-  discountPercent = 0;
 
-  get discount(): number {
-    return discountAmount(this.totalPrice, this.discountPercent);
-  }
-
-  get total(): number {
-    return this.totalPrice - this.discount;
+  /** subtotal at regular prices, savings and the amount to pay */
+  get totals() {
+    return this.pricing.totals(this.cartItems);
   }
 
   ngOnInit(): void {
     this.listCartDetails();
 
-    this.auth.user$.subscribe((user) => {
-      this.loggedIn = !!user;
-      this.discountPercent = user?.discountPercent ?? 0;
-    });
+    this.auth.user$.subscribe((user) => (this.loggedIn = !!user));
     this.auth.refreshUser();
   }
 

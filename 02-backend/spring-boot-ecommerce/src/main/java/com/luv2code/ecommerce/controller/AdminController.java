@@ -1,8 +1,10 @@
 package com.luv2code.ecommerce.controller;
 
+import com.luv2code.ecommerce.dao.ContactMessageRepository;
 import com.luv2code.ecommerce.dao.ProductCategoryRepository;
 import com.luv2code.ecommerce.dao.ProductRepository;
 import com.luv2code.ecommerce.dao.RoleRepo;
+import com.luv2code.ecommerce.entity.ContactMessage;
 import com.luv2code.ecommerce.entity.Product;
 import com.luv2code.ecommerce.entity.ProductCategory;
 import com.luv2code.ecommerce.entity.Role;
@@ -22,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -40,13 +43,16 @@ public class AdminController {
     private final RoleRepo roleRepo;
     private final ProductCategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final ContactMessageRepository contactMessageRepository;
 
     public AdminController(UserService userService, RoleRepo roleRepo,
-                           ProductCategoryRepository categoryRepository, ProductRepository productRepository) {
+                           ProductCategoryRepository categoryRepository, ProductRepository productRepository,
+                           ContactMessageRepository contactMessageRepository) {
         this.userService = userService;
         this.roleRepo = roleRepo;
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
+        this.contactMessageRepository = contactMessageRepository;
     }
 
     // ---------- members ----------
@@ -116,7 +122,15 @@ public class AdminController {
         int discount = request.discountPercent() == null ? 0 : request.discountPercent();
         validateDiscount(discount);
 
-        userService.setDiscount(username, discount);
+        // empty or missing productIds = the discount applies to every product
+        HashSet<Long> productIds = new HashSet<>(request.productIds() == null ? List.of() : request.productIds());
+        for (Long productId : productIds) {
+            if (!productRepository.existsById(productId)) {
+                throw badRequest("Product " + productId + " does not exist");
+            }
+        }
+
+        userService.setDiscount(username, discount, productIds);
         return MemberResponse.from(userService.getUser(username));
     }
 
@@ -167,9 +181,44 @@ public class AdminController {
                 ? DEFAULT_IMAGE
                 : request.imageUrl().trim());
         product.setActive(true);
+        int sale = request.salePercent() == null ? 0 : request.salePercent();
+        validateDiscount(sale);
+        product.setSalePercent(sale);
+        product.setMemberDiscountEnabled(request.memberDiscountEnabled() == null || request.memberDiscountEnabled());
 
         Product saved = productRepository.save(product);
         return new ProductResponse(saved.getId(), saved.getName(), category.getId());
+    }
+
+    // sale % for everyone and whether member discounts apply to this product
+    @PutMapping("/products/{id}/discounts")
+    public ProductResponse setProductDiscounts(@PathVariable Long id, @RequestBody ProductDiscountsRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product " + id + " does not exist"));
+        if (request.salePercent() != null) {
+            validateDiscount(request.salePercent());
+            product.setSalePercent(request.salePercent());
+        }
+        if (request.memberDiscountEnabled() != null) {
+            product.setMemberDiscountEnabled(request.memberDiscountEnabled());
+        }
+        Product saved = productRepository.save(product);
+        return new ProductResponse(saved.getId(), saved.getName(), saved.getCategory().getId());
+    }
+
+    // ---------- contact messages ----------
+
+    @GetMapping("/messages")
+    public List<ContactMessage> getMessages() {
+        return contactMessageRepository.findAllByOrderByDateCreatedDesc();
+    }
+
+    @PutMapping("/messages/{id}/handled")
+    public ContactMessage setHandled(@PathVariable Long id, @RequestBody HandledRequest request) {
+        ContactMessage message = contactMessageRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Message " + id + " does not exist"));
+        message.setHandled(Boolean.TRUE.equals(request.handled()));
+        return contactMessageRepository.save(message);
     }
 
     // ---------- helpers & DTOs ----------
@@ -195,15 +244,22 @@ public class AdminController {
                                Integer discountPercent) {
     }
 
-    record DiscountRequest(Integer discountPercent) {
+    record DiscountRequest(Integer discountPercent, List<Long> productIds) {
+    }
+
+    record ProductDiscountsRequest(Integer salePercent, Boolean memberDiscountEnabled) {
+    }
+
+    record HandledRequest(Boolean handled) {
     }
 
     record MemberResponse(Long id, String name, String username, List<String> roles,
-                          int discountPercent, boolean discountEligible) {
+                          int discountPercent, boolean discountEligible, List<Long> discountProductIds) {
         static MemberResponse from(User user) {
             return new MemberResponse(user.getId(), user.getName(), user.getUsername(),
                     user.getRoles().stream().map(Role::getName).sorted().toList(),
-                    user.getEffectiveDiscountPercent(), user.isDiscountEligible());
+                    user.getEffectiveDiscountPercent(), user.isDiscountEligible(),
+                    user.getDiscountProductIds().stream().sorted().toList());
         }
     }
 
@@ -214,7 +270,8 @@ public class AdminController {
     }
 
     record CreateProductRequest(String name, String sku, String description, BigDecimal unitPrice,
-                                Integer unitsInStock, String imageUrl, Long categoryId) {
+                                Integer unitsInStock, String imageUrl, Long categoryId, Integer salePercent,
+                                Boolean memberDiscountEnabled) {
     }
 
     record ProductResponse(Long id, String name, Long categoryId) {

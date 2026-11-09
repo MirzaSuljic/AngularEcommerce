@@ -90,4 +90,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         user.setDiscountPercent(discountPercent);
         userRepo.save(user);
     }
+
+    @Override
+    public void setDiscount(String username, int discountPercent, java.util.Set<Long> productIds) {
+        User user = userRepo.findByUsername(username);
+        user.setDiscountPercent(discountPercent);
+        user.getDiscountProductIds().clear();
+        user.getDiscountProductIds().addAll(productIds);
+        userRepo.save(user);
+    }
 }

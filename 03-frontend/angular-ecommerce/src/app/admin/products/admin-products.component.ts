@@ -34,7 +34,14 @@ export class AdminProductsComponent {
     unitsInStock: [100, [Validators.required, Validators.min(0)]],
     imageUrl: [PLACEHOLDER_IMAGE],
     description: [''],
+    salePercent: [0, [Validators.min(0), Validators.max(90)]],
+    memberDiscountEnabled: [true],
   });
+
+  // per-row edits of the discount settings, keyed by product id
+  drafts: Record<string, { salePercent: number; memberDiscountEnabled: boolean }> = {};
+  savingId = '';
+  rowMessage = '';
 
   saving = false;
   error = '';
@@ -62,7 +69,49 @@ export class AdminProductsComponent {
     this.productService.getProductListPaginate(0, 100, categoryId).subscribe((data) => {
       this.products = data._embedded?.products ?? [];
       this.totalInCategory = data.page.totalElements;
+      this.drafts = Object.fromEntries(
+        this.products.map((p) => [
+          p.id,
+          { salePercent: p.salePercent ?? 0, memberDiscountEnabled: p.memberDiscountEnabled !== false },
+        ])
+      );
     });
+  }
+
+  isDirty(product: Product): boolean {
+    const draft = this.drafts[product.id];
+    return (
+      !!draft &&
+      (draft.salePercent !== (product.salePercent ?? 0) ||
+        draft.memberDiscountEnabled !== (product.memberDiscountEnabled !== false))
+    );
+  }
+
+  saveDiscounts(product: Product) {
+    const draft = this.drafts[product.id];
+    if (!Number.isFinite(draft.salePercent) || draft.salePercent < 0 || draft.salePercent > 90) {
+      this.rowMessage = 'Sale must be between 0 and 90 %.';
+      return;
+    }
+    this.savingId = product.id;
+    this.rowMessage = '';
+    this.admin
+      .setProductDiscounts(Number(product.id), {
+        salePercent: Math.round(draft.salePercent),
+        memberDiscountEnabled: draft.memberDiscountEnabled,
+      })
+      .subscribe({
+        next: () => {
+          this.savingId = '';
+          product.salePercent = Math.round(draft.salePercent);
+          product.memberDiscountEnabled = draft.memberDiscountEnabled;
+          this.rowMessage = `Saved discounts for ${product.name}.`;
+        },
+        error: (err: HttpErrorResponse) => {
+          this.savingId = '';
+          this.rowMessage = apiErrorMessage(err);
+        },
+      });
   }
 
   showError(name: 'name' | 'sku' | 'unitPrice' | 'unitsInStock'): boolean {
@@ -81,13 +130,26 @@ export class AdminProductsComponent {
 
     const value = this.form.getRawValue();
     this.admin
-      .createProduct({ ...value, categoryId: Number(value.categoryId), imageUrl: value.imageUrl.trim() })
+      .createProduct({
+        ...value,
+        categoryId: Number(value.categoryId),
+        imageUrl: value.imageUrl.trim(),
+        salePercent: Number(value.salePercent) || 0,
+      })
       .subscribe({
         next: (product) => {
           this.saving = false;
           this.created = product;
           // keep the category so several products can be added in a row
-          this.form.reset({ ...this.form.getRawValue(), name: '', sku: '', description: '', imageUrl: PLACEHOLDER_IMAGE });
+          this.form.reset({
+            ...this.form.getRawValue(),
+            name: '',
+            sku: '',
+            description: '',
+            imageUrl: PLACEHOLDER_IMAGE,
+            salePercent: 0,
+            memberDiscountEnabled: true,
+          });
           this.loadProducts();
         },
         error: (err: HttpErrorResponse) => {

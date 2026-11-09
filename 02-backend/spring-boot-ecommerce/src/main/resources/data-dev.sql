@@ -124,3 +124,17 @@ INSERT INTO state (name, country_id) VALUES ('Hesse', 2);
 INSERT INTO state (name, country_id) VALUES ('California', 3);
 INSERT INTO state (name, country_id) VALUES ('New York', 3);
 INSERT INTO state (name, country_id) VALUES ('Texas', 3);
+
+-- a couple of contact form messages for the admin panel
+INSERT INTO contact_message (name, email, subject, message, date_created, handled)
+VALUES ('Amra Hodžić', 'amra@example.com', 'Bulk order for our team', 'Hi! We would like to order 12 coffee mugs for our dev team. Is there a discount for larger orders?', CURRENT_TIMESTAMP, FALSE);
+INSERT INTO contact_message (name, email, subject, message, date_created, handled)
+VALUES ('Lukas Weber', 'lukas@example.com', 'Shipping to Germany', 'How long does shipping to Munich usually take?', CURRENT_TIMESTAMP, TRUE);
+
+-- products on sale for everyone
+UPDATE product SET sale_percent = 20 WHERE sku IN ('BOOK-TECH-1008', 'BOOK-TECH-1016', 'BOOK-TECH-1020');
+UPDATE product SET sale_percent = 15 WHERE sku IN ('COFFEEMUG-1003', 'MOUSEPAD-1005');
+UPDATE product SET sale_percent = 30 WHERE sku = 'LUGGAGETAG-1012';
+
+-- example: member discounts do not apply to this already cheap luggage tag
+UPDATE product SET member_discount_enabled = FALSE WHERE sku = 'LUGGAGETAG-1000';

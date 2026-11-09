@@ -66,6 +66,11 @@ export class ProductService {
     return this.http.get<GetResponseProducts>(searchUrl);
   }
 
+  /** Every product (for admin pickers). */
+  getAllProducts(): Observable<Product[]> {
+    return this.getProducts(`${this.baseUrl}?size=1000&sort=name`);
+  }
+
   getProduct(theProductId: number): Observable<Product> {
     const productUrl = `${this.baseUrl}/${theProductId}`;
     return this.http.get<Product>(productUrl);

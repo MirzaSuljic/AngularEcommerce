@@ -1,15 +1,35 @@
-<nav class="page" aria-label="Product categories">
-  <ul class="-mb-px flex gap-6 overflow-x-auto text-sm font-medium">
-    @for (tempProductCategory of productCategories; track tempProductCategory.id) {
-      <li>
-        <a
-          routerLink="/category/{{ tempProductCategory.id }}"
-          routerLinkActive="!border-pine !text-pine"
-          class="block border-b-2 border-transparent py-3 whitespace-nowrap text-ink-soft capitalize transition-colors hover:text-ink"
-        >
-          {{ tempProductCategory.categoryName.toLowerCase() }}
-        </a>
-      </li>
-    }
+<div class="page flex items-end justify-between gap-6">
+  <nav class="min-w-0" aria-label="Product categories">
+    <ul class="-mb-px flex gap-6 overflow-x-auto text-sm font-medium">
+      @for (tempProductCategory of productCategories; track tempProductCategory.id) {
+        <li>
+          <a
+            routerLink="/category/{{ tempProductCategory.id }}"
+            routerLinkActive="!border-pine !text-pine"
+            class="block border-b-2 border-transparent py-3 whitespace-nowrap text-ink-soft capitalize transition-colors hover:text-ink"
+          >
+            {{ tempProductCategory.categoryName.toLowerCase() }}
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+  <ul class="-mb-px hidden shrink-0 gap-6 text-sm font-medium md:flex">
+    <li>
+      <a
+        routerLink="/about"
+        routerLinkActive="!border-pine !text-pine"
+        class="block border-b-2 border-transparent py-3 text-ink-soft transition-colors hover:text-ink"
+        >About</a
+      >
+    </li>
+    <li>
+      <a
+        routerLink="/contact"
+        routerLinkActive="!border-pine !text-pine"
+        class="block border-b-2 border-transparent py-3 text-ink-soft transition-colors hover:text-ink"
+        >Contact</a
+      >
+    </li>
   </ul>
-</nav>
+</div>

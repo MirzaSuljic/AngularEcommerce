@@ -55,6 +55,14 @@ public class Product {
     @UpdateTimestamp
     private Date lastUpdated;
 
+    // sale discount in percent for everyone (0 = no sale), set by an admin
+    @Column(name = "sale_percent")
+    private Integer salePercent = 0;
+
+    // when false, member discounts do not apply to this product (a sale still does)
+    @Column(name = "member_discount_enabled")
+    private Boolean memberDiscountEnabled = true;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -87,4 +95,10 @@ public class Product {
 
     public Date getLastUpdated() { return lastUpdated; }
     public void setLastUpdated(Date lastUpdated) { this.lastUpdated = lastUpdated; }
+
+    public Integer getSalePercent() { return salePercent == null ? 0 : salePercent; }
+    public void setSalePercent(Integer salePercent) { this.salePercent = salePercent; }
+
+    public boolean isMemberDiscountEnabled() { return memberDiscountEnabled == null || memberDiscountEnabled; }
+    public void setMemberDiscountEnabled(Boolean memberDiscountEnabled) { this.memberDiscountEnabled = memberDiscountEnabled; }
 }

@@ -34,7 +34,8 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
         List<String> roles = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-        return ResponseEntity.ok(new CurrentUser(user.getUsername(), user.getName(), roles, user.getEffectiveDiscountPercent()));
+        return ResponseEntity.ok(new CurrentUser(user.getUsername(), user.getName(), roles,
+                user.getEffectiveDiscountPercent(), user.getDiscountProductIds().stream().sorted().toList()));
     }
 
     @GetMapping("/users")
@@ -63,6 +64,7 @@ public class UserController {
     record RoleToUserForm(String username, String roleName) {
     }
 
-    record CurrentUser(String username, String name, List<String> roles, int discountPercent) {
+    record CurrentUser(String username, String name, List<String> roles, int discountPercent,
+                       List<Long> discountProductIds) {
     }
 }

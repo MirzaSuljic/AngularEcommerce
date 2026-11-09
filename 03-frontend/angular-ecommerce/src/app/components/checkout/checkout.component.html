@@ -17,10 +17,10 @@
             <dt class="text-white/70">Subtotal</dt>
             <dd class="tabular-nums">{{ orderResult.subtotal | currency: "USD" }}</dd>
           </div>
-          @if (orderResult.memberDiscount > 0) {
+          @if (orderResult.discount > 0) {
             <div class="flex justify-between text-marigold">
-              <dt>Member discount</dt>
-              <dd class="tabular-nums">−{{ orderResult.memberDiscount | currency: "USD" }}</dd>
+              <dt>Discounts</dt>
+              <dd class="tabular-nums">−{{ orderResult.discount | currency: "USD" }}</dd>
             </div>
           }
           <div class="flex items-baseline justify-between border-t border-white/20 pt-3">
@@ -380,12 +380,12 @@
         <dl class="mt-6 space-y-3 border-t border-white/20 pt-5 text-sm">
           <div class="flex justify-between">
             <dt class="text-white/70">Subtotal</dt>
-            <dd class="font-semibold tabular-nums">{{ totalPrice | currency: "USD" }}</dd>
+            <dd class="font-semibold tabular-nums">{{ totals.subtotal | currency: "USD" }}</dd>
           </div>
-          @if (discountPercent > 0) {
+          @if (totals.discount > 0) {
             <div class="flex justify-between text-marigold">
-              <dt>Member discount ({{ discountPercent }}%)</dt>
-              <dd class="font-semibold tabular-nums">−{{ discount | currency: "USD" }}</dd>
+              <dt>Discounts</dt>
+              <dd class="font-semibold tabular-nums">−{{ totals.discount | currency: "USD" }}</dd>
             </div>
           }
           <div class="flex justify-between">
@@ -395,7 +395,7 @@
           <div class="flex items-baseline justify-between">
             <dt class="text-white/70">Total ({{ totalQuantity }} items)</dt>
             <dd class="font-display text-3xl font-bold tabular-nums">
-              {{ total | currency: "USD" }}
+              {{ totals.total | currency: "USD" }}
             </dd>
           </div>
         </dl>

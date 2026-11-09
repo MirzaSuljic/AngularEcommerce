@@ -13,6 +13,8 @@ export interface AuthUser {
   roles: string[];
   /** member discount in percent; always 0 for admins and super admins */
   discountPercent: number;
+  /** products the member discount applies to; empty = every product */
+  discountProductIds: number[];
 }
 
 interface LoginResponse {

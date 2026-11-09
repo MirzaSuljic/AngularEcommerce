@@ -18,7 +18,7 @@ import { Purchase } from '../../common/purchase';
 import { State } from '../../common/state';
 import { CartService } from '../../services/cart.service';
 import { CheckoutService } from '../../services/checkout.service';
-import { discountAmount } from '../../services/pricing';
+import { PricingService } from '../../services/pricing';
 import { PurchaseResponse, PurchaseService } from '../../services/purchase.service';
 import { CheckoutValidators } from '../../validators/checkout-validators';
 
@@ -35,6 +35,7 @@ export class CheckoutComponent implements OnInit {
   private cartService = inject(CartService);
   private purchaseService = inject(PurchaseService);
   private auth = inject(AuthService);
+  private pricing = inject(PricingService);
 
   checkoutFormGroup!: FormGroup;
 
@@ -52,14 +53,10 @@ export class CheckoutComponent implements OnInit {
   orderResult: PurchaseResponse | null = null;
 
   loggedIn = false;
-  discountPercent = 0;
 
-  get discount(): number {
-    return discountAmount(this.totalPrice, this.discountPercent);
-  }
-
-  get total(): number {
-    return this.totalPrice - this.discount;
+  /** subtotal at regular prices, savings (sales and member discount) and the amount to pay */
+  get totals() {
+    return this.pricing.totals(this.cartService.cartItems);
   }
 
   get cartItems(): CartItem[] {
@@ -72,10 +69,7 @@ export class CheckoutComponent implements OnInit {
   ngOnInit(): void {
     this.reviewCartDetails();
 
-    this.auth.user$.subscribe((user) => {
-      this.loggedIn = !!user;
-      this.discountPercent = user?.discountPercent ?? 0;
-    });
+    this.auth.user$.subscribe((user) => (this.loggedIn = !!user));
     this.auth.refreshUser();
 
     const startMonth: number = new Date().getMonth() + 1;
@@ -300,7 +294,7 @@ export class CheckoutComponent implements OnInit {
     const order: Order = {
       totalQuantity: this.totalQuantity,
       // the backend recalculates prices and the member discount; this is only a hint
-      totalPrice: this.total,
+      totalPrice: this.totals.total,
     };
 
     const cartItems = this.cartService.cartItems;

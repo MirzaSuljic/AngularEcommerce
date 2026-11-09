@@ -33,21 +33,9 @@
         >
           {{ product.name }}
         </h1>
-        @if (discountPercent > 0) {
-          <p class="mt-5 flex flex-wrap items-center gap-3">
-            <span class="price-tag text-2xl">{{ memberPrice | currency: "USD" }}</span>
-            <span class="text-lg text-ink-soft line-through">{{
-              product.unitPrice | currency: "USD"
-            }}</span>
-            <span class="rounded-full bg-pine px-3 py-1 text-xs font-semibold text-white">
-              Your member price −{{ discountPercent }}%
-            </span>
-          </p>
-        } @else {
-          <p class="mt-5">
-            <span class="price-tag text-2xl">{{ product.unitPrice | currency: "USD" }}</span>
-          </p>
-        }
+        <div class="mt-5">
+          <app-price [item]="product" size="large" />
+        </div>
 
         <p class="mt-6 max-w-prose text-lg leading-relaxed text-ink-soft">
           {{ product.description }}

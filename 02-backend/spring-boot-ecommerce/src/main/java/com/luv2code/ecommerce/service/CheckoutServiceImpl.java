@@ -8,6 +8,7 @@ import com.luv2code.ecommerce.entity.Customer;
 import com.luv2code.ecommerce.entity.Order;
 import com.luv2code.ecommerce.entity.OrderItem;
 import com.luv2code.ecommerce.entity.Product;
+import com.luv2code.ecommerce.entity.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,15 +32,17 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     @Transactional
-    public PurchaseResponse placeOrder(Purchase purchase, int discountPercent) {
+    public PurchaseResponse placeOrder(Purchase purchase, User buyer) {
         Order order = purchase.order();
         Set<OrderItem> orderItems = purchase.orderItems();
         if (order == null || orderItems == null || orderItems.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The order has no items");
         }
 
-        // prices always come from the catalog, never from the browser
+        // prices always come from the catalog, never from the browser;
+        // each item gets the product sale, then the buyer's member discount on top
         BigDecimal subtotal = BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO;
         int totalQuantity = 0;
         for (OrderItem item : orderItems) {
             Product product = productRepository.findById(item.getProductId())
@@ -48,22 +51,25 @@ public class CheckoutServiceImpl implements CheckoutService {
             if (item.getQuantity() < 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be at least 1");
             }
-            item.setUnitPrice(product.getUnitPrice());
+            BigDecimal quantity = BigDecimal.valueOf(item.getQuantity());
+            BigDecimal paidUnitPrice = Pricing.unitPrice(product, buyer);
+
+            item.setUnitPrice(paidUnitPrice);
             item.setImageUrl(product.getImageUrl());
-            subtotal = subtotal.add(product.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+            subtotal = subtotal.add(product.getUnitPrice().multiply(quantity));
+            total = total.add(paidUnitPrice.multiply(quantity));
             totalQuantity += item.getQuantity();
             order.add(item);
         }
-
-        BigDecimal discount = subtotal.multiply(BigDecimal.valueOf(discountPercent))
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        BigDecimal total = subtotal.subtract(discount).setScale(2, RoundingMode.HALF_UP);
+        subtotal = subtotal.setScale(2, RoundingMode.HALF_UP);
+        total = total.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal discount = subtotal.subtract(total);
 
         String orderTrackingNumber = generateOrderTrackingNumber();
         order.setOrderTrackingNumber(orderTrackingNumber);
         order.setTotalQuantity(totalQuantity);
         order.setTotalPrice(total);
-        order.setStatus(discountPercent > 0 ? "PLACED (member discount " + discountPercent + "%)" : "PLACED");
+        order.setStatus("PLACED");
 
         order.setBillingAddress(purchase.billingAddress());
         order.setShippingAddress(purchase.shippingAddress());
@@ -73,7 +79,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         customerRepository.save(customer);
 
-        return new PurchaseResponse(orderTrackingNumber, subtotal.setScale(2, RoundingMode.HALF_UP), discount, total);
+        return new PurchaseResponse(orderTrackingNumber, subtotal, discount, total);
     }
 
     private String generateOrderTrackingNumber() {

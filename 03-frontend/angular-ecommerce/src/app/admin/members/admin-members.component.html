@@ -13,6 +13,141 @@
       </p>
     }
 
+    @if (editing) {
+      <section
+        class="mt-6 rounded-2xl border-2 border-pine/30 bg-paper p-5"
+        aria-label="Edit member discount"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <h3 class="font-display text-xl font-bold">Discount for {{ editing.name }}</h3>
+          <button type="button" class="btn-ghost -mt-1" (click)="closeEditor()">Close</button>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-end gap-6">
+          <div>
+            <label class="field-label" for="edit-percent">Discount</label>
+            <div class="relative w-28">
+              <input
+                id="edit-percent"
+                type="number"
+                min="0"
+                max="90"
+                class="field-input pr-8"
+                [value]="editPercent"
+                (input)="editPercent = +$any($event.target).value"
+              />
+              <span
+                class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-ink-soft"
+                >%</span
+              >
+            </div>
+          </div>
+          <fieldset class="flex gap-2">
+            <legend class="field-label">Applies to</legend>
+            <label
+              class="cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium has-[:checked]:bg-pine has-[:checked]:text-white"
+            >
+              <input
+                type="radio"
+                name="scope"
+                class="sr-only"
+                [checked]="editScope === 'all'"
+                (change)="editScope = 'all'"
+              />
+              All products
+            </label>
+            <label
+              class="cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium has-[:checked]:bg-pine has-[:checked]:text-white"
+            >
+              <input
+                type="radio"
+                name="scope"
+                class="sr-only"
+                [checked]="editScope === 'selected'"
+                (change)="editScope = 'selected'"
+              />
+              Selected products ({{ editProductIds.size }})
+            </label>
+          </fieldset>
+        </div>
+
+        @if (editScope === "selected") {
+          <div class="mt-5">
+            <div class="flex flex-wrap items-center gap-3">
+              <input
+                type="search"
+                placeholder="Search by name or SKU…"
+                class="field-input max-w-xs"
+                [value]="productSearch"
+                (input)="productSearch = $any($event.target).value"
+                aria-label="Search products"
+              />
+              <label class="flex items-center gap-2 text-sm text-ink-soft">
+                <input
+                  type="checkbox"
+                  class="size-4 accent-pine"
+                  [checked]="showSelectedOnly"
+                  (change)="showSelectedOnly = !showSelectedOnly"
+                />
+                Selected only
+              </label>
+              <button
+                type="button"
+                class="text-sm text-pine underline underline-offset-2"
+                (click)="selectAllShown(true)"
+              >
+                Add all shown
+              </button>
+              <button
+                type="button"
+                class="text-sm text-ink-soft underline underline-offset-2"
+                (click)="selectAllShown(false)"
+              >
+                Remove all shown
+              </button>
+            </div>
+            <ul
+              class="mt-3 max-h-72 divide-y divide-line overflow-y-auto rounded-xl border border-line bg-white"
+            >
+              @for (product of filteredProducts; track product.id) {
+                <li>
+                  <label class="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-paper">
+                    <input
+                      type="checkbox"
+                      class="size-4 accent-pine"
+                      [checked]="editProductIds.has(+product.id)"
+                      (change)="toggleProduct(product.id, $any($event.target).checked)"
+                    />
+                    <img
+                      [src]="product.imageUrl"
+                      alt=""
+                      class="size-8 rounded bg-sage object-contain"
+                    />
+                    <span class="flex-1 text-sm">{{ product.name }}</span>
+                    <span class="text-xs text-ink-soft">{{ product.sku }}</span>
+                  </label>
+                </li>
+              } @empty {
+                <li class="px-3 py-6 text-center text-sm text-ink-soft">No products match.</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div class="mt-5 flex justify-end gap-2">
+          <button type="button" class="btn-secondary" (click)="closeEditor()">Cancel</button>
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="savingDiscount"
+            (click)="saveDiscount()"
+          >
+            {{ savingDiscount ? "Saving…" : "Save discount" }}
+          </button>
+        </div>
+      </section>
+    }
+
     @if (loadError) {
       <p class="mt-6 rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
         {{ loadError }}
@@ -50,39 +185,15 @@
               </td>
               <td class="py-3">
                 @if (member.discountEligible) {
-                  <form
-                    class="flex items-center gap-2"
-                    (submit)="$event.preventDefault(); saveDiscount(member)"
+                  <button
+                    type="button"
+                    (click)="openEditor(member)"
+                    class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold hover:bg-sage"
+                    [class]="member.discountPercent > 0 ? 'text-pine' : 'text-ink-soft'"
                   >
-                    <label class="sr-only" [for]="'discount-' + member.username"
-                      >Discount for {{ member.name }}</label
-                    >
-                    <div class="relative">
-                      <input
-                        [id]="'discount-' + member.username"
-                        type="number"
-                        min="0"
-                        max="90"
-                        class="w-20 rounded-lg border border-line bg-white py-1.5 pr-7 pl-2 text-sm tabular-nums focus:border-pine focus:outline-none"
-                        [value]="discountDrafts[member.username]"
-                        (input)="discountDrafts[member.username] = +$any($event.target).value"
-                      />
-                      <span
-                        class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs text-ink-soft"
-                        >%</span
-                      >
-                    </div>
-                    <button
-                      type="submit"
-                      class="rounded-full px-3 py-1.5 text-xs font-semibold text-pine hover:bg-sage disabled:opacity-40"
-                      [disabled]="
-                        savingDiscountFor === member.username ||
-                        discountDrafts[member.username] === member.discountPercent
-                      "
-                    >
-                      {{ savingDiscountFor === member.username ? "Saving…" : "Save" }}
-                    </button>
-                  </form>
+                    {{ discountSummary(member) }}
+                    <span class="underline underline-offset-2">Edit</span>
+                  </button>
                 } @else {
                   <span class="text-xs text-ink-soft">Not for admins</span>
                 }
