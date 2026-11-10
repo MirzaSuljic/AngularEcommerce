@@ -1,0 +1,14 @@
+# Netlify: builds the Angular app from 03-frontend/angular-ecommerce
+[build]
+  base = "03-frontend/angular-ecommerce"
+  command = "npm run build"
+  publish = "dist/angular-ecommerce/browser"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# single page app: every route (e.g. /category/2, /settings) serves index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

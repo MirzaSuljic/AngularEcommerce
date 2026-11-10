@@ -13,13 +13,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.Table;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+// "user" is a reserved word in PostgreSQL
 @Entity
+@Table(name = "app_user")
 public class User {
 
     @Id

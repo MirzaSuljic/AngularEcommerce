@@ -16,8 +16,6 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 @Configuration
 public class MyDataRestConfig implements RepositoryRestConfigurer {
 
-    private static final String ALLOWED_ORIGIN = "http://localhost:4200";
-
     private final EntityManager entityManager;
 
     public MyDataRestConfig(EntityManager entityManager) {
@@ -36,9 +34,7 @@ public class MyDataRestConfig implements RepositoryRestConfigurer {
 
         // expose entity ids (Spring Data REST hides them by default)
         exposeIds(config);
-
-        // allow the Angular dev server to call the REST API
-        cors.addMapping(config.getBasePath() + "/**").allowedOrigins(ALLOWED_ORIGIN);
+        // CORS for every endpoint (allowed origins from app.cors.allowed-origins) is set up in SecurityConfig
     }
 
     private static void disableHttpMethods(Class<?> theClass, RepositoryRestConfiguration config,

@@ -1,6 +1,7 @@
 package com.luv2code.ecommerce.security;
 
 import com.luv2code.ecommerce.filter.CustomAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -59,10 +60,11 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
+    // app.cors.allowed-origins: comma separated, e.g. "http://localhost:4200,https://luv2shop.netlify.app"
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(@Value("${app.cors.allowed-origins}") List<String> allowedOrigins) {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
+        config.setAllowedOrigins(allowedOrigins.stream().map(String::trim).map(o -> o.replaceAll("/+$", "")).toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("access_token", "refresh_token"));

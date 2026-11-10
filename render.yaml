@@ -1,0 +1,24 @@
+# Render Blueprint: Spring Boot API (Docker). The database is on Neon (console.neon.tech).
+# Render dashboard -> New -> Blueprint -> pick this GitHub repo; fill in the values it asks for.
+services:
+  - type: web
+    name: luv2shop-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerContext: ./02-backend/spring-boot-ecommerce
+    dockerfilePath: ./02-backend/spring-boot-ecommerce/Dockerfile
+    healthCheckPath: /api/product-category
+    envVars:
+      # jdbc:postgresql://<neon host>/ecommerce?sslmode=require&channel_binding=require
+      - key: ECOMMERCE_DB_URL
+        sync: false
+      - key: ECOMMERCE_DB_USERNAME
+        sync: false
+      - key: ECOMMERCE_DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      # the Netlify address of the frontend, e.g. https://luv2shop.netlify.app
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false

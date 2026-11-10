@@ -34,3 +34,6 @@ build/
 
 # uploaded product images
 uploads/
+
+# local secrets (database password, JWT secret)
+.env
