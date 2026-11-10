@@ -1,0 +1,166 @@
+<section class="page pt-8 pb-4 lg:pt-4">
+  @if (user) {
+    <div class="flex flex-wrap items-center gap-5">
+      <span
+        class="grid size-18 place-items-center rounded-full bg-pine font-display text-2xl font-extrabold text-marigold"
+        aria-hidden="true"
+      >
+        {{ initials }}
+      </span>
+      <div>
+        <h1 class="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">Settings</h1>
+        <p class="mt-1 text-ink-soft">
+          Signed in as <strong class="text-ink">{{ user.username }}</strong>
+          @if (user.roles.length) {
+            · {{ user.roles.length === 1 ? "role" : "roles" }}:
+            @for (role of user.roles; track role; let last = $last) {
+              {{ roleLabel(role) }}{{ last ? "" : ", " }}
+            }
+          }
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-8 grid max-w-4xl gap-6 md:grid-cols-2">
+      <!-- profile -->
+      <form
+        [formGroup]="profileForm"
+        (ngSubmit)="saveProfile()"
+        class="flex flex-col gap-4 rounded-3xl border border-line bg-white p-6"
+        aria-labelledby="h-profile"
+        novalidate
+      >
+        <h2 id="h-profile" class="font-display text-xl font-bold">Profile</h2>
+        <div>
+          <label class="field-label" for="settings-name">Full name</label>
+          <input id="settings-name" type="text" formControlName="name" class="field-input" autocomplete="name" />
+          @if (profileForm.controls.name.touched && profileForm.controls.name.invalid) {
+            <p class="field-error">Enter a name of up to 80 characters</p>
+          }
+        </div>
+        <div>
+          <label class="field-label" for="settings-username">Username</label>
+          <input
+            id="settings-username"
+            type="text"
+            [value]="user.username"
+            readonly
+            class="field-input bg-paper text-ink-soft"
+          />
+        </div>
+        <button
+          type="submit"
+          class="btn-primary self-start"
+          [disabled]="savingProfile || !profileForm.dirty"
+        >
+          {{ savingProfile ? "Saving…" : "Save profile" }}
+        </button>
+      </form>
+
+      <!-- password -->
+      <form
+        [formGroup]="passwordForm"
+        (ngSubmit)="changePassword()"
+        class="flex flex-col gap-4 rounded-3xl border border-line bg-white p-6"
+        aria-labelledby="h-password"
+        novalidate
+      >
+        <h2 id="h-password" class="font-display text-xl font-bold">Password</h2>
+        <div>
+          <label class="field-label" for="settings-current">Current password</label>
+          <input
+            id="settings-current"
+            type="password"
+            formControlName="currentPassword"
+            class="field-input"
+            autocomplete="current-password"
+          />
+          @if (passwordForm.controls.currentPassword.touched && passwordForm.controls.currentPassword.invalid) {
+            <p class="field-error">Enter your current password</p>
+          }
+        </div>
+        <div>
+          <label class="field-label" for="settings-new">New password</label>
+          <input
+            id="settings-new"
+            type="password"
+            formControlName="newPassword"
+            class="field-input"
+            autocomplete="new-password"
+          />
+          @if (passwordForm.controls.newPassword.touched && passwordForm.controls.newPassword.invalid) {
+            <p class="field-error">At least 4 characters</p>
+          }
+        </div>
+        <button type="submit" class="btn-secondary self-start" [disabled]="savingPassword">
+          {{ savingPassword ? "Changing…" : "Change password" }}
+        </button>
+      </form>
+
+      <!-- member discount -->
+      <section
+        class="flex flex-col gap-4 rounded-3xl bg-pine p-6 text-white md:col-span-2"
+        aria-labelledby="h-discount"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="h-discount" class="font-display text-xl font-bold">My member discount</h2>
+          @if (isAdmin) {
+            <span class="rounded-full bg-white/15 px-4 py-1.5 text-sm font-semibold">Not for admins</span>
+          } @else if (user.discountPercent > 0) {
+            <span class="rounded-full bg-marigold px-4 py-1.5 font-extrabold text-ink"
+              >{{ user.discountPercent }}% on all products</span
+            >
+          } @else {
+            <span class="rounded-full bg-white/15 px-4 py-1.5 text-sm font-semibold">No discount on all products</span>
+          }
+        </div>
+        @if (!isAdmin) {
+          @if (ownDiscounts.length) {
+            <p class="text-sm text-sage">These products have your own price. A sale on top is added automatically.</p>
+            <ul class="grid gap-2.5 sm:grid-cols-2">
+              @for (item of ownDiscounts; track item.id) {
+                <li>
+                  <a
+                    routerLink="/products/{{ item.id }}"
+                    class="flex items-center justify-between gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/20"
+                  >
+                    <span class="truncate">{{ item.name }}</span>
+                    <span class="shrink-0 rounded-full bg-white px-2.5 py-0.5 text-xs font-extrabold text-pine"
+                      >−{{ item.percent }}%</span
+                    >
+                  </a>
+                </li>
+              }
+            </ul>
+          } @else if (user.discountPercent === 0) {
+            <p class="text-sm text-sage">An admin can give you a member discount.</p>
+          }
+        }
+      </section>
+
+      <!-- session -->
+      <section
+        class="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-line bg-white p-6 md:col-span-2"
+        aria-labelledby="h-session"
+      >
+        <div>
+          <h2 id="h-session" class="font-display text-xl font-bold">Session</h2>
+          <p class="mt-1 text-sm text-ink-soft">
+            @if (isAdmin) {
+              Manage the shop in the <a routerLink="/admin" class="font-semibold text-pine underline underline-offset-2">admin panel</a>.
+            } @else {
+              Signed in on this device.
+            }
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn-secondary !border-danger !text-danger hover:!bg-danger/5"
+          (click)="logout()"
+        >
+          Log out
+        </button>
+      </section>
+    </div>
+  }
+</section>

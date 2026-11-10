@@ -101,11 +101,8 @@ export class ProductListComponent implements OnInit {
   handleListProducts() {
     const hasCategoryId: boolean = this.route.snapshot.paramMap.has('id');
 
-    if (hasCategoryId) {
-      this.currentCategoryId = +this.route.snapshot.paramMap.get('id')!;
-    } else {
-      this.currentCategoryId = 1;
-    }
+    // no category in the URL (/products) = all products
+    this.currentCategoryId = hasCategoryId ? +this.route.snapshot.paramMap.get('id')! : 0;
 
     if (this.previousCategoryId !== this.currentCategoryId) {
       this.thePageNumber = 1;
@@ -113,12 +110,20 @@ export class ProductListComponent implements OnInit {
 
     this.previousCategoryId = this.currentCategoryId;
 
+    this.loading = true;
+    if (this.currentCategoryId === 0) {
+      this.currentCategoryName = 'All products';
+      this.productService
+        .getAllProductsPaginate(this.thePageNumber - 1, this.thePageSize)
+        .subscribe(this.processResult());
+      return;
+    }
+
     this.productService.getProductCategories().pipe(take(1)).subscribe((categories) => {
       const category = categories.find((c) => c.id === this.currentCategoryId);
       this.currentCategoryName = category?.categoryName ?? '';
     });
 
-    this.loading = true;
     this.productService
       .getProductListPaginate(this.thePageNumber - 1, this.thePageSize, this.currentCategoryId)
       .subscribe(this.processResult());

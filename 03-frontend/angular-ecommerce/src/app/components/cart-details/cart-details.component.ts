@@ -7,6 +7,7 @@ import { CartItem } from '../../common/cart-item';
 import { CartService } from '../../services/cart.service';
 import { PricingService } from '../../services/pricing';
 import { PriceComponent } from '../price/price.component';
+import { ConfirmService } from '../../shared/confirm.service';
 
 @Component({
   selector: 'app-cart-details',
@@ -17,6 +18,7 @@ import { PriceComponent } from '../price/price.component';
 })
 export class CartDetailsComponent implements OnInit {
   private cartService = inject(CartService);
+  private confirm = inject(ConfirmService);
   private auth = inject(AuthService);
   readonly pricing = inject(PricingService);
 
@@ -50,11 +52,26 @@ export class CartDetailsComponent implements OnInit {
     this.cartService.addToCart(theCartItem);
   }
 
-  decrementQuantity(theCartItem: CartItem) {
+  async decrementQuantity(theCartItem: CartItem) {
+    // going from 1 to 0 removes the item, so ask first
+    if (theCartItem.quantity === 1 && !(await this.askRemove(theCartItem))) {
+      return;
+    }
     this.cartService.decrementQuantity(theCartItem);
   }
 
-  remove(theCartItem: CartItem) {
-    this.cartService.remove(theCartItem);
+  async remove(theCartItem: CartItem) {
+    if (await this.askRemove(theCartItem)) {
+      this.cartService.remove(theCartItem);
+    }
+  }
+
+  private askRemove(item: CartItem): Promise<boolean> {
+    return this.confirm.ask({
+      title: `Remove ${item.name}?`,
+      message: 'It will be taken out of your cart.',
+      confirmText: 'Remove',
+      tone: 'danger',
+    });
   }
 }

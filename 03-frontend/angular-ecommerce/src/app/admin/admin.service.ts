@@ -10,10 +10,10 @@ export interface Member {
   username: string;
   roles: string[];
   discountPercent: number;
-  /** false for admins and super admins */
+  /** false for admins */
   discountEligible: boolean;
-  /** products the discount applies to; empty = every product */
-  discountProductIds: number[];
+  /** own discount per product: product id -> percent */
+  productDiscounts: Record<string, number>;
 }
 
 export interface NewMember {
@@ -66,12 +66,19 @@ export class AdminService {
     return this.http.post<Member>(`${this.baseUrl}/users`, member);
   }
 
-  /** productIds empty = the discount applies to every product */
-  setDiscount(username: string, discountPercent: number, productIds: number[] = []): Observable<Member> {
+  /** The member's discount on every product (products with their own discount keep theirs). */
+  setDiscount(username: string, discountPercent: number): Observable<Member> {
     return this.http.put<Member>(`${this.baseUrl}/users/${encodeURIComponent(username)}/discount`, {
       discountPercent,
-      productIds,
     });
+  }
+
+  /** Replaces the member's own discounts per product (product id -> percent). */
+  setMemberProductDiscounts(username: string, discounts: Record<string, number>): Observable<Member> {
+    return this.http.put<Member>(
+      `${this.baseUrl}/users/${encodeURIComponent(username)}/product-discounts`,
+      { discounts }
+    );
   }
 
   setProductDiscounts(
@@ -92,10 +99,37 @@ export class AdminService {
     return this.http.put<ContactMessage>(`${this.baseUrl}/messages/${id}/handled`, { handled });
   }
 
+  /** Categories with their product counts. */
+  getCategories(): Observable<{ id: number; categoryName: string; productCount: number }[]> {
+    return this.http.get<{ id: number; categoryName: string; productCount: number }[]>(
+      `${this.baseUrl}/categories`
+    );
+  }
+
+  /** Deletes the category and all of its products. */
+  deleteCategory(categoryId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/categories/${categoryId}`);
+  }
+
   createCategory(categoryName: string): Observable<{ id: number; categoryName: string }> {
     return this.http.post<{ id: number; categoryName: string }>(`${this.baseUrl}/categories`, {
       categoryName,
     });
+  }
+
+  deleteMember(username: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/users/${encodeURIComponent(username)}`);
+  }
+
+  deleteProduct(productId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/products/${productId}`);
+  }
+
+  /** Uploads a product image; the backend answers with its public URL. */
+  uploadImage(file: File): Observable<{ url: string }> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.http.post<{ url: string }>(`${this.baseUrl}/uploads`, body);
   }
 
   createProduct(product: NewProduct): Observable<{ id: number; name: string; categoryId: number }> {
@@ -117,7 +151,7 @@ export function apiErrorMessage(err: HttpErrorResponse): string {
   return err.error?.message || err.error?.detail || `Request failed (${err.status}).`;
 }
 
-/** "ROLE_SUPER_ADMIN" -> "super admin" */
+/** "ROLE_ADMIN" -> "admin" */
 export function roleLabel(role: string): string {
   return role.replace(/^ROLE_/, '').replace(/_/g, ' ').toLowerCase();
 }

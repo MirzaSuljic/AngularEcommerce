@@ -20,7 +20,7 @@ export const adminGuard: CanActivateFn = (_route, state) => {
     return true;
   }
   if (auth.isAuthenticated()) {
-    return router.createUrlTree(['/members']);
+    return router.createUrlTree(['/settings']);
   }
   return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };

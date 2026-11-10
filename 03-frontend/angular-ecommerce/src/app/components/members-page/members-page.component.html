@@ -16,10 +16,19 @@
         <div>
           <dt class="text-white/60">Member discount</dt>
           <dd class="mt-1 font-semibold">
-            @if (user.discountPercent > 0) {
-              <span class="rounded-full bg-marigold px-3 py-0.5 text-ink">
-                {{ user.discountPercent }}% off
-                {{ user.discountProductIds.length ? user.discountProductIds.length + ' selected products' : 'every product' }}
+            @let ownCount = productDiscountCount;
+            @if (user.discountPercent > 0 || ownCount > 0) {
+              <span class="flex flex-wrap gap-2">
+                @if (user.discountPercent > 0) {
+                  <span class="rounded-full bg-marigold px-3 py-0.5 text-ink">
+                    {{ user.discountPercent }}% off every product
+                  </span>
+                }
+                @if (ownCount > 0) {
+                  <span class="rounded-full bg-marigold px-3 py-0.5 text-ink">
+                    Own price on {{ ownCount }} {{ ownCount === 1 ? 'product' : 'products' }}
+                  </span>
+                }
               </span>
             } @else if (isStaff) {
               Not available for admins

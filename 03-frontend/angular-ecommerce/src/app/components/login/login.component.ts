@@ -28,7 +28,7 @@ export class LoginComponent {
   readonly demoAccounts: DemoAccount[] = [
     { username: 'john', name: 'John Travolta', role: 'User, Manager' },
     { username: 'jim', name: 'Jim Carry', role: 'Admin' },
-    { username: 'arnold', name: 'Arnold Schwarzenegger', role: 'Super admin' },
+    { username: 'arnold', name: 'Arnold Schwarzenegger', role: 'Admin, User' },
   ];
 
   form = this.fb.nonNullable.group({
@@ -58,7 +58,7 @@ export class LoginComponent {
       next: () => {
         this.submitting = false;
         const returnUrl =
-          this.route.snapshot.queryParamMap.get('returnUrl') || (this.auth.isAdmin() ? '/admin' : '/members');
+          this.route.snapshot.queryParamMap.get('returnUrl') || (this.auth.isAdmin() ? '/admin' : '/products');
         this.router.navigateByUrl(returnUrl);
       },
       error: (err: HttpErrorResponse) => {

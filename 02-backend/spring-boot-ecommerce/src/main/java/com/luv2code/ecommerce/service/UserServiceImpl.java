@@ -92,11 +92,53 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public void setDiscount(String username, int discountPercent, java.util.Set<Long> productIds) {
+    public void setProductDiscounts(String username, java.util.Map<Long, Integer> productDiscounts) {
         User user = userRepo.findByUsername(username);
-        user.setDiscountPercent(discountPercent);
-        user.getDiscountProductIds().clear();
-        user.getDiscountProductIds().addAll(productIds);
+        user.getProductDiscounts().clear();
+        user.getProductDiscounts().putAll(productDiscounts);
         userRepo.save(user);
+    }
+
+    @Override
+    public void deleteUser(String username) {
+        log.info("Deleting user {}", username);
+        User user = userRepo.findByUsername(username);
+        if (user != null) {
+            userRepo.delete(user);
+        }
+    }
+
+    @Override
+    public void removeRole(String roleName) {
+        Role role = roleRepo.findByName(roleName);
+        if (role == null) {
+            return;
+        }
+        log.info("Removing role {}", roleName);
+        for (User user : userRepo.findAll()) {
+            if (user.getRoles().removeIf(r -> r.getName().equals(roleName))) {
+                userRepo.save(user);
+            }
+        }
+        roleRepo.delete(role);
+    }
+
+    @Override
+    public void updateName(String username, String name) {
+        User user = userRepo.findByUsername(username);
+        user.setName(name);
+        userRepo.save(user);
+    }
+
+    @Override
+    public boolean changePassword(String username, String currentPassword, String newPassword) {
+        User user = userRepo.findByUsername(username);
+        if (user == null || currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return false;
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepo.save(user);
+        log.info("Password changed for user {}", username);
+        return true;
     }
 }

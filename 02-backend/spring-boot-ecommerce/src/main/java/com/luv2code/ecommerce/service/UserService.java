@@ -15,6 +15,17 @@ public interface UserService {
 
     void setDiscount(String username, int discountPercent);
 
-    void setDiscount(String username, int discountPercent, java.util.Set<Long> productIds);
+    /** Replaces the member's per-product discounts (product id -> percent). */
+    void setProductDiscounts(String username, java.util.Map<Long, Integer> productDiscounts);
+
+    void deleteUser(String username);
+
+    void updateName(String username, String name);
+
+    /** Sets a new password if the current one matches; false when it does not. */
+    boolean changePassword(String username, String currentPassword, String newPassword);
+
+    /** Removes a role from every user and deletes it (used to drop ROLE_SUPER_ADMIN). */
+    void removeRole(String roleName);
 
 }

@@ -11,10 +11,10 @@ export interface AuthUser {
   username: string;
   name: string;
   roles: string[];
-  /** member discount in percent; always 0 for admins and super admins */
+  /** member discount in percent on every product without its own one; always 0 for admins */
   discountPercent: number;
-  /** products the member discount applies to; empty = every product */
-  discountProductIds: number[];
+  /** own member discount per product: product id -> percent */
+  productDiscounts: Record<string, number>;
 }
 
 interface LoginResponse {
@@ -81,6 +81,16 @@ export class AuthService {
     if (this.isAuthenticated()) {
       this.loadUser().subscribe({ error: () => {} });
     }
+  }
+
+  /** The signed in user changes their own name. */
+  updateName(name: string): Observable<AuthUser> {
+    return this.http.put<AuthUser>(this.meUrl, { name }).pipe(tap((user) => this.userSubject.next(user)));
+  }
+
+  /** The signed in user changes their own password (the backend checks the current one). */
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http.put<void>(`${this.meUrl}/password`, { currentPassword, newPassword });
   }
 
   logout(navigate = true) {

@@ -1,11 +1,11 @@
-<section class="page pt-10 pb-4 sm:pt-14">
+<section class="page pt-8 pb-4 lg:pt-4">
   <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-line pb-6">
     <div>
       @if (searchMode) {
         <p class="mb-1 text-sm text-ink-soft">Search results for</p>
       }
       <h1
-        class="font-display text-5xl leading-[0.9] font-extrabold tracking-tight text-ink capitalize sm:text-7xl lg:text-8xl"
+        class="font-display text-5xl leading-[0.95] font-extrabold tracking-tight text-ink capitalize sm:text-6xl"
       >
         {{ searchMode ? heading : heading.toLowerCase() }}
       </h1>
@@ -22,13 +22,17 @@
 </section>
 
 <section id="product-results" class="page scroll-mt-4" aria-live="polite">
-  @if (pricing.memberPercent > 0) {
+  @if (pricing.hasMemberDiscount) {
     <p class="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-pine px-5 py-3 text-sm text-white">
-      <span class="rounded-full bg-marigold px-2.5 py-0.5 font-bold text-ink">−{{ pricing.memberPercent }}%</span>
-      @if (pricing.memberAppliesToAll) {
-        Your member discount is applied to every eligible price below.
+      @if (pricing.memberPercent > 0) {
+        <span class="rounded-full bg-marigold px-2.5 py-0.5 font-bold text-ink">−{{ pricing.memberPercent }}%</span>
+        Your member discount is applied to every eligible price below{{
+          pricing.productDiscountCount ? ", and some products have their own member price" : ""
+        }}.
       } @else {
-        Your member discount applies to selected products – look for the “Member” badge.
+        <span class="rounded-full bg-marigold px-2.5 py-0.5 font-bold text-ink">Member</span>
+        You have member discounts on {{ pricing.productDiscountCount }}
+        {{ pricing.productDiscountCount === 1 ? "product" : "products" }} – look for the “Member” badge.
       }
     </p>
   }

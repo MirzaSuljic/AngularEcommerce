@@ -7,143 +7,233 @@
       </p>
     </div>
 
-    @if (discountMessage) {
-      <p class="mt-6 rounded-xl bg-sage px-4 py-3 text-sm text-pine" role="status">
-        {{ discountMessage }}
-      </p>
-    }
-
     @if (editing) {
       <section
         class="mt-6 rounded-2xl border-2 border-pine/30 bg-paper p-5"
-        aria-label="Edit member discount"
+        aria-label="Edit member discounts"
       >
         <div class="flex flex-wrap items-start justify-between gap-3">
-          <h3 class="font-display text-xl font-bold">Discount for {{ editing.name }}</h3>
+          <h3 class="font-display text-xl font-bold">Discounts for {{ editing.name }}</h3>
           <button type="button" class="btn-ghost -mt-1" (click)="closeEditor()">Close</button>
         </div>
 
-        <div class="mt-4 flex flex-wrap items-end gap-6">
-          <div>
-            <label class="field-label" for="edit-percent">Discount</label>
+        <!-- 1. discount on every product -->
+        <div class="mt-5 rounded-xl bg-white p-4">
+          <h4 class="font-semibold">All products</h4>
+          <p class="mt-0.5 text-sm text-ink-soft">
+            Used for every product that has no own discount below. 0 = none.
+          </p>
+          <div class="mt-3 flex items-center gap-3">
             <div class="relative w-28">
+              <label class="sr-only" for="all-percent">Discount on all products</label>
               <input
-                id="edit-percent"
+                id="all-percent"
                 type="number"
                 min="0"
                 max="90"
                 class="field-input pr-8"
-                [value]="editPercent"
-                (input)="editPercent = +$any($event.target).value"
+                [value]="allPercent"
+                (input)="allPercent = +$any($event.target).value"
               />
               <span
                 class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-ink-soft"
                 >%</span
               >
             </div>
+            <button
+              type="button"
+              class="btn-secondary"
+              [disabled]="busy || allPercent === editing.discountPercent"
+              (click)="saveAllPercent()"
+            >
+              Save
+            </button>
           </div>
-          <fieldset class="flex gap-2">
-            <legend class="field-label">Applies to</legend>
-            <label
-              class="cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium has-[:checked]:bg-pine has-[:checked]:text-white"
-            >
-              <input
-                type="radio"
-                name="scope"
-                class="sr-only"
-                [checked]="editScope === 'all'"
-                (change)="editScope = 'all'"
-              />
-              All products
-            </label>
-            <label
-              class="cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium has-[:checked]:bg-pine has-[:checked]:text-white"
-            >
-              <input
-                type="radio"
-                name="scope"
-                class="sr-only"
-                [checked]="editScope === 'selected'"
-                (change)="editScope = 'selected'"
-              />
-              Selected products ({{ editProductIds.size }})
-            </label>
-          </fieldset>
         </div>
 
-        @if (editScope === "selected") {
-          <div class="mt-5">
-            <div class="flex flex-wrap items-center gap-3">
-              <input
-                type="search"
-                placeholder="Search by name or SKU…"
-                class="field-input max-w-xs"
-                [value]="productSearch"
-                (input)="productSearch = $any($event.target).value"
-                aria-label="Search products"
-              />
-              <label class="flex items-center gap-2 text-sm text-ink-soft">
-                <input
-                  type="checkbox"
-                  class="size-4 accent-pine"
-                  [checked]="showSelectedOnly"
-                  (change)="showSelectedOnly = !showSelectedOnly"
-                />
-                Selected only
-              </label>
-              <button
-                type="button"
-                class="text-sm text-pine underline underline-offset-2"
-                (click)="selectAllShown(true)"
-              >
-                Add all shown
-              </button>
-              <button
-                type="button"
-                class="text-sm text-ink-soft underline underline-offset-2"
-                (click)="selectAllShown(false)"
-              >
-                Remove all shown
-              </button>
-            </div>
-            <ul
-              class="mt-3 max-h-72 divide-y divide-line overflow-y-auto rounded-xl border border-line bg-white"
-            >
-              @for (product of filteredProducts; track product.id) {
-                <li>
-                  <label class="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-paper">
-                    <input
-                      type="checkbox"
-                      class="size-4 accent-pine"
-                      [checked]="editProductIds.has(+product.id)"
-                      (change)="toggleProduct(product.id, $any($event.target).checked)"
-                    />
-                    <img
-                      [src]="product.imageUrl"
-                      alt=""
-                      class="size-8 rounded bg-sage object-contain"
-                    />
-                    <span class="flex-1 text-sm">{{ product.name }}</span>
-                    <span class="text-xs text-ink-soft">{{ product.sku }}</span>
-                  </label>
-                </li>
-              } @empty {
-                <li class="px-3 py-6 text-center text-sm text-ink-soft">No products match.</li>
-              }
-            </ul>
-          </div>
-        }
+        <!-- 2. give picked products a percent -->
+        <div class="mt-4 rounded-xl bg-white p-4">
+          <h4 class="font-semibold">Discount on selected products</h4>
+          <p class="mt-0.5 text-sm text-ink-soft">
+            Pick products, set the percent and save. Products saved earlier keep their own percent.
+          </p>
 
-        <div class="mt-5 flex justify-end gap-2">
-          <button type="button" class="btn-secondary" (click)="closeEditor()">Cancel</button>
-          <button
-            type="button"
-            class="btn-primary"
-            [disabled]="savingDiscount"
-            (click)="saveDiscount()"
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <div class="relative w-28">
+              <label class="sr-only" for="pick-percent">Discount for the selected products</label>
+              <input
+                id="pick-percent"
+                type="number"
+                min="1"
+                max="90"
+                class="field-input pr-8"
+                [value]="pickPercent"
+                (input)="pickPercent = +$any($event.target).value"
+              />
+              <span
+                class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-ink-soft"
+                >%</span
+              >
+            </div>
+            <button
+              type="button"
+              class="btn-primary"
+              [disabled]="busy || pickedIds.size === 0"
+              (click)="applyToPicked()"
+            >
+              Save {{ pickPercent }}% for {{ pickedIds.size }}
+              {{ pickedIds.size === 1 ? "product" : "products" }}
+            </button>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <input
+              type="search"
+              placeholder="Search by name or SKU…"
+              class="field-input max-w-xs"
+              [value]="productSearch"
+              (input)="productSearch = $any($event.target).value"
+              aria-label="Search products"
+            />
+            <label class="flex items-center gap-2 text-sm text-ink-soft">
+              <input
+                type="checkbox"
+                class="size-4 accent-pine"
+                [checked]="showPickedOnly"
+                (change)="showPickedOnly = !showPickedOnly"
+              />
+              Selected only
+            </label>
+            <button
+              type="button"
+              class="text-sm text-pine underline underline-offset-2"
+              (click)="pickAllShown(true)"
+            >
+              Select all shown
+            </button>
+            <button
+              type="button"
+              class="text-sm text-ink-soft underline underline-offset-2"
+              (click)="pickAllShown(false)"
+            >
+              Clear shown
+            </button>
+          </div>
+          <ul
+            class="mt-3 max-h-72 divide-y divide-line overflow-y-auto rounded-xl border border-line bg-white"
           >
-            {{ savingDiscount ? "Saving…" : "Save discount" }}
-          </button>
+            @for (product of filteredProducts; track product.id) {
+              @let own = ownPercent(product);
+              <li>
+                <label class="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-paper">
+                  <input
+                    type="checkbox"
+                    class="size-4 accent-pine"
+                    [checked]="pickedIds.has(+product.id)"
+                    (change)="togglePick(product.id, $any($event.target).checked)"
+                  />
+                  <img [src]="product.imageUrl" alt="" class="size-8 rounded bg-sage object-contain" />
+                  <span class="flex-1 text-sm">{{ product.name }}</span>
+                  @if (own !== undefined) {
+                    <span class="rounded-full bg-pine px-2 py-0.5 text-xs font-bold text-white"
+                      >−{{ own }}%</span
+                    >
+                  }
+                  <span class="w-32 text-right text-xs text-ink-soft">{{ product.sku }}</span>
+                </label>
+              </li>
+            } @empty {
+              <li class="px-3 py-6 text-center text-sm text-ink-soft">No products match.</li>
+            }
+          </ul>
+        </div>
+
+        <!-- 3. products that have their own percent -->
+        <div class="mt-4 rounded-xl bg-white p-4">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h4 class="font-semibold">Product discounts ({{ discountedProducts.length }})</h4>
+            @if (discountedProducts.length) {
+              <button
+                type="button"
+                class="text-sm text-danger underline underline-offset-2"
+                [disabled]="busy"
+                (click)="removeAllRows()"
+              >
+                Remove all
+              </button>
+            }
+          </div>
+          @if (discountedProducts.length === 0) {
+            <p class="mt-2 text-sm text-ink-soft">No product has its own discount yet.</p>
+          } @else {
+            <table class="mt-3 w-full text-left text-sm">
+              <thead class="border-b border-line text-ink-soft">
+                <tr>
+                  <th class="py-2 pr-3 font-medium">Product</th>
+                  <th class="py-2 pr-3 font-medium">SKU</th>
+                  <th class="py-2 pr-3 font-medium">Discount</th>
+                  <th class="py-2"><span class="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-line">
+                @for (row of discountedProducts; track row.id) {
+                  <tr>
+                    <td class="py-2 pr-3">
+                      <span class="flex items-center gap-3">
+                        @if (row.product) {
+                          <img
+                            [src]="row.product.imageUrl"
+                            alt=""
+                            class="size-8 rounded bg-sage object-contain"
+                          />
+                        }
+                        {{ row.product?.name ?? "Product " + row.id }}
+                      </span>
+                    </td>
+                    <td class="py-2 pr-3 text-xs text-ink-soft">{{ row.product?.sku }}</td>
+                    <td class="py-2 pr-3">
+                      <div class="relative w-20">
+                        <label class="sr-only" [for]="'row-' + row.id"
+                          >Discount for {{ row.product?.name }}</label
+                        >
+                        <input
+                          [id]="'row-' + row.id"
+                          type="number"
+                          min="0"
+                          max="90"
+                          class="w-full rounded-lg border border-line bg-white py-1.5 pr-7 pl-2 text-sm tabular-nums focus:border-pine focus:outline-none"
+                          [value]="rowDrafts[row.id]"
+                          (input)="rowDrafts[row.id] = +$any($event.target).value"
+                        />
+                        <span
+                          class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs text-ink-soft"
+                          >%</span
+                        >
+                      </div>
+                    </td>
+                    <td class="py-2 text-right whitespace-nowrap">
+                      <button
+                        type="button"
+                        class="rounded-full px-3 py-1.5 text-xs font-semibold text-pine hover:bg-sage disabled:opacity-30"
+                        [disabled]="busy || !isRowDirty(row.id)"
+                        (click)="saveRow(row.id)"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        class="rounded-full px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/10"
+                        [disabled]="busy"
+                        (click)="removeRow(row.id)"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
         </div>
       </section>
     }
@@ -161,7 +251,8 @@
             <th class="py-2 pr-4 font-medium">Name</th>
             <th class="py-2 pr-4 font-medium">Username</th>
             <th class="py-2 pr-4 font-medium">Roles</th>
-            <th class="py-2 font-medium">Discount</th>
+            <th class="py-2 pr-4 font-medium">Discount</th>
+            <th class="py-2"><span class="sr-only">Delete</span></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-line">
@@ -183,7 +274,7 @@
                   }
                 </div>
               </td>
-              <td class="py-3">
+              <td class="py-3 pr-4">
                 @if (member.discountEligible) {
                   <button
                     type="button"
@@ -196,6 +287,21 @@
                   </button>
                 } @else {
                   <span class="text-xs text-ink-soft">Not for admins</span>
+                }
+              </td>
+              <td class="py-3 text-right whitespace-nowrap">
+                @if (isSelf(member)) {
+                  <span class="text-xs text-ink-soft">You</span>
+                } @else {
+                  <button
+                    type="button"
+                    class="rounded-full px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/10 disabled:opacity-40"
+                    [attr.aria-label]="'Delete ' + member.name"
+                    [disabled]="deletingUsername === member.username"
+                    (click)="deleteMember(member)"
+                  >
+                    {{ deletingUsername === member.username ? "Deleting…" : "Delete" }}
+                  </button>
                 }
               </td>
             </tr>
@@ -277,7 +383,7 @@
     <div>
       <label class="field-label" for="member-discount">Member discount (%)</label>
       @if (selectedStaffRole) {
-        <p class="text-sm text-ink-soft">Admins and super admins do not get a discount.</p>
+        <p class="text-sm text-ink-soft">Admins do not get a discount.</p>
       } @else {
         <input
           id="member-discount"

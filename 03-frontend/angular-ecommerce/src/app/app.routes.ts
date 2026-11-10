@@ -11,12 +11,14 @@ import { CartDetailsComponent } from './components/cart-details/cart-details.com
 import { CheckoutComponent } from './components/checkout/checkout.component';
 import { ContactComponent } from './components/contact/contact.component';
 import { LoginComponent } from './components/login/login.component';
-import { MembersPageComponent } from './components/members-page/members-page.component';
 import { ProductDetailsComponent } from './components/product-details/product-details.component';
 import { ProductListComponent } from './components/product-list/product-list.component';
+import { SettingsComponent } from './components/settings/settings.component';
 
 export const routes: Routes = [
-  { path: 'members', component: MembersPageComponent, canActivate: [authGuard] },
+  { path: 'settings', component: SettingsComponent, canActivate: [authGuard], title: 'Settings – luv2shop' },
+  // the old members page now lives in Settings
+  { path: 'members', redirectTo: 'settings', pathMatch: 'full' },
   {
     path: 'admin',
     component: AdminLayoutComponent,

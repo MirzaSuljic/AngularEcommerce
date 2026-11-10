@@ -4,11 +4,25 @@
     <p class="mt-1 text-sm text-ink-soft">Each category is a tab in the shop header.</p>
     <ul class="mt-6 divide-y divide-line">
       @for (category of categories; track category.id) {
-        <li class="flex items-center justify-between py-3">
-          <span class="font-medium capitalize">{{ category.categoryName.toLowerCase() }}</span>
-          <a routerLink="/category/{{ category.id }}" class="text-sm text-pine underline underline-offset-4">
-            View in shop
-          </a>
+        <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+          <span>
+            <span class="font-medium capitalize">{{ category.categoryName.toLowerCase() }}</span>
+            <span class="ml-2 text-sm text-ink-soft">{{ countLabel(category) }}</span>
+          </span>
+          <span class="flex items-center gap-2">
+            <a routerLink="/category/{{ category.id }}" class="text-sm text-pine underline underline-offset-4">
+              View in shop
+            </a>
+            <button
+              type="button"
+              class="rounded-full px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/10 disabled:opacity-40"
+              [attr.aria-label]="'Delete ' + category.categoryName.toLowerCase()"
+              [disabled]="deletingId === category.id"
+              (click)="deleteCategory(category)"
+            >
+              {{ deletingId === category.id ? 'Deleting…' : 'Delete' }}
+            </button>
+          </span>
         </li>
       }
     </ul>

@@ -8,8 +8,12 @@ import { Product } from '../../common/product';
 import { ProductCategory } from '../../common/product-category';
 import { ProductService } from '../../services/product.service';
 import { AdminService, apiErrorMessage } from '../admin.service';
+import { ConfirmService } from '../../shared/confirm.service';
+import { ToastService } from '../../shared/toast.service';
 
 const PLACEHOLDER_IMAGE = 'assets/images/products/placeholder.png';
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 
 @Component({
   selector: 'app-admin-products',
@@ -21,6 +25,8 @@ export class AdminProductsComponent {
   private fb = inject(FormBuilder);
   private admin = inject(AdminService);
   private productService = inject(ProductService);
+  private confirm = inject(ConfirmService);
+  private toast = inject(ToastService);
 
   categories: ProductCategory[] = [];
   products: Product[] = [];
@@ -41,7 +47,8 @@ export class AdminProductsComponent {
   // per-row edits of the discount settings, keyed by product id
   drafts: Record<string, { salePercent: number; memberDiscountEnabled: boolean }> = {};
   savingId = '';
-  rowMessage = '';
+
+  deletingId = '';
 
   saving = false;
   error = '';
@@ -55,6 +62,42 @@ export class AdminProductsComponent {
         this.loadProducts();
       }
     });
+  }
+
+  uploading = false;
+  uploadedFileName = '';
+
+  /** Uploads the chosen image right away and puts its URL into the form. */
+  onImageSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // the same file can be chosen again
+    if (!file) {
+      return;
+    }
+    if (!IMAGE_TYPES.includes(file.type)) {
+      this.toast.error('Cannot upload', 'Choose a PNG, JPG, WebP or GIF image.');
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      this.toast.error('Cannot upload', 'The image must be smaller than 5 MB.');
+      return;
+    }
+    this.uploading = true;
+    this.admin.uploadImage(file).subscribe({
+      next: ({ url }) => {
+        this.uploading = false;
+        this.uploadedFileName = file.name;
+        this.form.controls.imageUrl.setValue(url);
+      },
+      // the error toast comes from the global error interceptor
+      error: () => (this.uploading = false),
+    });
+  }
+
+  removeImage() {
+    this.uploadedFileName = '';
+    this.form.controls.imageUrl.setValue(PLACEHOLDER_IMAGE);
   }
 
   get previewImage(): string {
@@ -90,11 +133,10 @@ export class AdminProductsComponent {
   saveDiscounts(product: Product) {
     const draft = this.drafts[product.id];
     if (!Number.isFinite(draft.salePercent) || draft.salePercent < 0 || draft.salePercent > 90) {
-      this.rowMessage = 'Sale must be between 0 and 90 %.';
+      this.toast.error('Cannot save', 'Sale must be between 0 and 90 %.');
       return;
     }
     this.savingId = product.id;
-    this.rowMessage = '';
     this.admin
       .setProductDiscounts(Number(product.id), {
         salePercent: Math.round(draft.salePercent),
@@ -105,13 +147,40 @@ export class AdminProductsComponent {
           this.savingId = '';
           product.salePercent = Math.round(draft.salePercent);
           product.memberDiscountEnabled = draft.memberDiscountEnabled;
-          this.rowMessage = `Saved discounts for ${product.name}.`;
+          this.confirm.inform({
+            title: 'Discounts saved',
+            message: `Sale ${product.salePercent}% · member discounts ${product.memberDiscountEnabled === false ? 'off' : 'allowed'} for:`,
+            items: [`${product.name} (${product.sku})`],
+          });
         },
-        error: (err: HttpErrorResponse) => {
-          this.savingId = '';
-          this.rowMessage = apiErrorMessage(err);
-        },
+        // the error toast comes from the global error interceptor
+        error: () => (this.savingId = ''),
       });
+  }
+
+  async deleteProduct(product: Product) {
+    const confirmed = await this.confirm.ask({
+      title: `Delete ${product.name}?`,
+      message: 'The product is removed from the shop and from members\' discounts. This cannot be undone.',
+      confirmText: 'Delete product',
+      tone: 'danger',
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.deletingId = product.id;
+    this.admin.deleteProduct(Number(product.id)).subscribe({
+      next: () => {
+        this.deletingId = '';
+        this.products = this.products.filter((p) => p.id !== product.id);
+        this.totalInCategory = Math.max(0, this.totalInCategory - 1);
+        delete this.drafts[product.id];
+        this.productService.reloadCounts();
+        this.toast.success('Product deleted', product.name);
+      },
+      // the error toast comes from the global error interceptor
+      error: () => (this.deletingId = ''),
+    });
   }
 
   showError(name: 'name' | 'sku' | 'unitPrice' | 'unitsInStock'): boolean {
@@ -141,6 +210,7 @@ export class AdminProductsComponent {
           this.saving = false;
           this.created = product;
           // keep the category so several products can be added in a row
+          this.uploadedFileName = '';
           this.form.reset({
             ...this.form.getRawValue(),
             name: '',
@@ -151,6 +221,7 @@ export class AdminProductsComponent {
             memberDiscountEnabled: true,
           });
           this.loadProducts();
+          this.productService.reloadCounts();
         },
         error: (err: HttpErrorResponse) => {
           this.saving = false;

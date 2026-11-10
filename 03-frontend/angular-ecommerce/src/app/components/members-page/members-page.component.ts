@@ -21,7 +21,11 @@ export class MembersPageComponent {
   }
 
   get isStaff(): boolean {
-    return !!this.user?.roles.some((r) => r === 'ROLE_ADMIN' || r === 'ROLE_SUPER_ADMIN');
+    return !!this.user?.roles.some((r) => r === 'ROLE_ADMIN');
+  }
+
+  get productDiscountCount(): number {
+    return Object.keys(this.user?.productDiscounts ?? {}).length;
   }
 
   roleLabel(role: string): string {

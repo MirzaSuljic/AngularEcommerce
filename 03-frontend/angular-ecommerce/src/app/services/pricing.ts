@@ -49,22 +49,26 @@ export class PricingService {
     inject(AuthService).user$.subscribe((user) => (this.user = user));
   }
 
-  /** The logged in member's discount in percent (0 for guests and admins). */
+  /** The logged in member's discount on every product in percent (0 for guests and admins). */
   get memberPercent(): number {
     return this.user?.discountPercent ?? 0;
   }
 
-  /** True when the member discount covers every product. */
-  get memberAppliesToAll(): boolean {
-    return (this.user?.discountProductIds ?? []).length === 0;
+  /** How many products have the member's own discount. */
+  get productDiscountCount(): number {
+    return Object.keys(this.user?.productDiscounts ?? {}).length;
   }
 
+  get hasMemberDiscount(): boolean {
+    return this.memberPercent > 0 || this.productDiscountCount > 0;
+  }
+
+  /** The product's own member discount, otherwise the all-products one (same as User.memberDiscountFor). */
   memberPercentFor(item: PricedItem): number {
-    if (!this.user || this.memberPercent === 0 || item.memberDiscountEnabled === false) {
+    if (!this.user || item.memberDiscountEnabled === false) {
       return 0;
     }
-    const ids = this.user.discountProductIds ?? [];
-    return ids.length === 0 || ids.includes(Number(item.id)) ? this.memberPercent : 0;
+    return this.user.productDiscounts?.[String(item.id)] ?? this.memberPercent;
   }
 
   info(item: PricedItem): PriceInfo {

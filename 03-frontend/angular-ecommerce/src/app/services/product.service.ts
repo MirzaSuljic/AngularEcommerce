@@ -32,7 +32,25 @@ export class ProductService {
     return this.categoriesSubject.pipe(filter((c): c is ProductCategory[] => c !== null));
   }
 
+  // product count per category for the sidebar ({ total, categories: [{ id, count }] })
+  private countsSubject = new BehaviorSubject<CategoryCounts | null>(null);
+
+  getCategoryCounts(): Observable<CategoryCounts> {
+    if (this.countsSubject.value === null) {
+      this.reloadCounts();
+    }
+    return this.countsSubject.pipe(filter((c): c is CategoryCounts => c !== null));
+  }
+
+  /** Call after products or categories were added or deleted. */
+  reloadCounts() {
+    this.http
+      .get<CategoryCounts>(`${environment.apiUrl}/catalog/category-counts`)
+      .subscribe((counts) => this.countsSubject.next(counts));
+  }
+
   reloadCategories() {
+    this.reloadCounts();
     this.http
       .get<GetResponseProductCategory>(this.categoryUrl)
       .pipe(map((response) => response._embedded?.productCategory ?? []))
@@ -53,6 +71,13 @@ export class ProductService {
       `${this.baseUrl}/search/findByCategoryId?id=${theCategoryId}` +
       `&page=${thePage}&size=${thePageSize}`;
     return this.http.get<GetResponseProducts>(searchUrl);
+  }
+
+  /** Every product, a page at a time, sorted by name ("All products" in the shop). */
+  getAllProductsPaginate(thePage: number, thePageSize: number): Observable<GetResponseProducts> {
+    return this.http.get<GetResponseProducts>(
+      `${this.baseUrl}?page=${thePage}&size=${thePageSize}&sort=name`
+    );
   }
 
   searchProductListPaginate(
@@ -95,6 +120,11 @@ export interface GetResponseProducts {
     totalPages: number;
     number: number;
   };
+}
+
+export interface CategoryCounts {
+  total: number;
+  categories: { id: number; count: number }[];
 }
 
 interface GetResponseProductCategory {

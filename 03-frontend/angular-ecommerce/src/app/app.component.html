@@ -1,42 +1,77 @@
-<div class="flex min-h-screen flex-col">
-  <header class="border-b border-line bg-white">
-    <div class="page flex flex-wrap items-center gap-x-6 gap-y-3 py-4">
-      <a
-        routerLink="/products"
-        class="font-display text-2xl font-extrabold tracking-tight text-pine"
-        aria-label="luv2shop home"
-      >
-        luv2shop
-      </a>
+<div class="min-h-screen lg:flex">
+  <!-- phone: top bar with menu button, logo and cart -->
+  <header
+    class="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-white px-3 lg:hidden"
+  >
+    <button
+      type="button"
+      class="grid size-11 place-items-center rounded-xl text-ink hover:bg-paper"
+      aria-label="Open menu"
+      aria-controls="app-sidebar"
+      [attr.aria-expanded]="menuOpen"
+      (click)="menuOpen = true"
+    >
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" class="size-6" aria-hidden="true">
+        <path d="M3 6h14M3 10h14M3 14h14" stroke-linecap="round" />
+      </svg>
+    </button>
+    <a routerLink="/products" class="font-display text-2xl font-extrabold tracking-tight text-pine">luv2shop</a>
+    <app-cart-status />
+  </header>
 
-      <app-search class="order-last w-full sm:order-none sm:w-auto sm:flex-1" />
+  <!-- phone: dimmed page behind the open drawer -->
+  @if (menuOpen) {
+    <div class="fixed inset-0 z-40 bg-ink/50 lg:hidden" aria-hidden="true" (click)="menuOpen = false"></div>
+  }
 
-      <div class="ml-auto flex items-center gap-2 sm:ml-0">
-        <app-login-status />
+  <!-- sidebar: a drawer on phones, always visible from lg up -->
+  <aside
+    id="app-sidebar"
+    aria-label="Shop navigation"
+    class="fixed inset-y-0 left-0 z-50 w-72 border-r border-line bg-white shadow-2xl transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:shrink-0 lg:translate-x-0 lg:shadow-none"
+    [class.-translate-x-full]="!menuOpen"
+  >
+    <button
+      type="button"
+      class="absolute top-5 right-3 z-10 grid size-11 place-items-center rounded-xl bg-paper text-ink lg:hidden"
+      aria-label="Close menu"
+      (click)="menuOpen = false"
+    >
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
+        <path d="M5 5l10 10M15 5L5 15" stroke-linecap="round" />
+      </svg>
+    </button>
+    <app-sidebar />
+  </aside>
+
+  <div class="flex min-w-0 flex-1 flex-col">
+    <!-- desktop: cart in the top right corner -->
+    <div class="hidden lg:block">
+      <div class="page flex justify-end pt-5">
         <app-cart-status />
       </div>
     </div>
 
-    <app-product-category-menu />
-  </header>
+    <main class="flex-1">
+      <router-outlet />
+    </main>
 
-  <main class="flex-1">
-    <router-outlet />
-  </main>
-
-  <footer class="mt-16 border-t border-line">
-    <div
-      class="page flex flex-col gap-6 py-8 text-sm text-ink-soft sm:flex-row sm:items-center sm:justify-between"
-    >
-      <p>
-        <span class="font-display font-bold text-pine">luv2shop</span>
-        – books and gear for people who write code.
-      </p>
-      <nav class="flex gap-5" aria-label="Footer">
-        <a routerLink="/about" class="hover:text-pine">About</a>
-        <a routerLink="/contact" class="hover:text-pine">Contact</a>
-        <a routerLink="/members" class="hover:text-pine">Members</a>
-      </nav>
-    </div>
-  </footer>
+    <footer class="mt-16 border-t border-line">
+      <div
+        class="page flex flex-col gap-6 py-8 text-sm text-ink-soft sm:flex-row sm:items-center sm:justify-between"
+      >
+        <p>
+          <span class="font-display font-bold text-pine">luv2shop</span>
+          – books and gear for people who write code.
+        </p>
+        <nav class="flex gap-5" aria-label="Footer">
+          <a routerLink="/about" class="hover:text-pine">About</a>
+          <a routerLink="/contact" class="hover:text-pine">Contact</a>
+        </nav>
+      </div>
+    </footer>
+  </div>
 </div>
+
+<!-- global modal: confirmations, messages and errors -->
+<app-confirm-dialog />

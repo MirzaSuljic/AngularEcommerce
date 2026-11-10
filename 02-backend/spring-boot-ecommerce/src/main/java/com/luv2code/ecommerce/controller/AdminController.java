@@ -10,8 +10,11 @@ import com.luv2code.ecommerce.entity.ProductCategory;
 import com.luv2code.ecommerce.entity.Role;
 import com.luv2code.ecommerce.entity.User;
 import com.luv2code.ecommerce.service.UserService;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,10 +27,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Admin-only endpoints (secured with ROLE_ADMIN in SecurityConfig):
@@ -101,7 +106,7 @@ public class AdminController {
         roles.forEach(role -> userService.addRoleToUser(username, role));
         if (discount > 0) {
             if (!userService.getUser(username).isDiscountEligible()) {
-                throw badRequest("Admins and super admins cannot get a member discount");
+                throw badRequest("Admins cannot get a member discount");
             }
             userService.setDiscount(username, discount);
         }
@@ -109,32 +114,98 @@ public class AdminController {
         return MemberResponse.from(userService.getUser(username));
     }
 
+    // the member's discount on every product (products with their own discount keep theirs)
     @PutMapping("/users/{username}/discount")
     @Transactional
     public MemberResponse setDiscount(@PathVariable String username, @RequestBody DiscountRequest request) {
+        eligibleMember(username);
+        int discount = request.discountPercent() == null ? 0 : request.discountPercent();
+        validateDiscount(discount);
+        userService.setDiscount(username, discount);
+        return MemberResponse.from(userService.getUser(username));
+    }
+
+    // replaces the member's own discounts per product (product id -> percent; 0 removes it)
+    @PutMapping("/users/{username}/product-discounts")
+    @Transactional
+    public MemberResponse setProductDiscounts(@PathVariable String username,
+                                              @RequestBody ProductDiscountMapRequest request) {
+        eligibleMember(username);
+        Map<Long, Integer> discounts = new HashMap<>();
+        if (request.discounts() != null) {
+            request.discounts().forEach((productId, percent) -> {
+                int value = percent == null ? 0 : percent;
+                validateDiscount(value);
+                if (!productRepository.existsById(productId)) {
+                    throw badRequest("Product " + productId + " does not exist");
+                }
+                if (value > 0) {
+                    discounts.put(productId, value);
+                }
+            });
+        }
+        userService.setProductDiscounts(username, discounts);
+        return MemberResponse.from(userService.getUser(username));
+    }
+
+    private User eligibleMember(String username) {
         User user = userService.getUser(username);
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Member '" + username + "' does not exist");
         }
         if (!user.isDiscountEligible()) {
-            throw badRequest("Admins and super admins cannot get a member discount");
+            throw badRequest("Admins cannot get a member discount");
         }
-        int discount = request.discountPercent() == null ? 0 : request.discountPercent();
-        validateDiscount(discount);
+        return user;
+    }
 
-        // empty or missing productIds = the discount applies to every product
-        HashSet<Long> productIds = new HashSet<>(request.productIds() == null ? List.of() : request.productIds());
-        for (Long productId : productIds) {
-            if (!productRepository.existsById(productId)) {
-                throw badRequest("Product " + productId + " does not exist");
+    // an admin cannot delete their own account or the last remaining admin
+    @DeleteMapping("/users/{username}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
+    public void deleteUser(@PathVariable String username, Authentication authentication) {
+        User user = userService.getUser(username);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Member '" + username + "' does not exist");
+        }
+        if (user.getUsername().equals(authentication.getName())) {
+            throw badRequest("You cannot delete your own account");
+        }
+        if (!user.isDiscountEligible()) {
+            long admins = userService.getUsers().stream().filter(u -> !u.isDiscountEligible()).count();
+            if (admins <= 1) {
+                throw badRequest("The last admin cannot be deleted");
             }
         }
-
-        userService.setDiscount(username, discount, productIds);
-        return MemberResponse.from(userService.getUser(username));
+        userService.deleteUser(username);
     }
 
     // ---------- categories ----------
+
+    // categories with how many products each one has
+    @GetMapping("/categories")
+    public List<CategoryResponse> getCategories() {
+        return categoryRepository.findAll().stream()
+                .sorted(Comparator.comparing(ProductCategory::getId))
+                .map(c -> new CategoryResponse(c.getId(), c.getCategoryName(),
+                        productRepository.findByCategoryId(c.getId(), Pageable.ofSize(1)).getTotalElements()))
+                .toList();
+    }
+
+    // deletes the category together with its products (cascade) and removes those products
+    // from members' selected discount products
+    @DeleteMapping("/categories/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
+    public void deleteCategory(@PathVariable Long id) {
+        ProductCategory category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category " + id + " does not exist"));
+        List<Long> productIds = productRepository.findByCategoryId(id, Pageable.unpaged()).stream()
+                .map(Product::getId)
+                .toList();
+        userService.getUsers().forEach(user -> user.getProductDiscounts().keySet().removeAll(productIds));
+        categoryRepository.delete(category);
+    }
 
     @PostMapping("/categories")
     @ResponseStatus(HttpStatus.CREATED)
@@ -150,7 +221,7 @@ public class AdminController {
         ProductCategory category = new ProductCategory();
         category.setCategoryName(name);
         ProductCategory saved = categoryRepository.save(category);
-        return new CategoryResponse(saved.getId(), saved.getCategoryName());
+        return new CategoryResponse(saved.getId(), saved.getCategoryName(), 0);
     }
 
     // ---------- products ----------
@@ -206,6 +277,18 @@ public class AdminController {
         return new ProductResponse(saved.getId(), saved.getName(), saved.getCategory().getId());
     }
 
+    // deletes the product and removes it from members' selected discount products;
+    // past orders keep their own copy of the price (order items only store the product id)
+    @DeleteMapping("/products/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
+    public void deleteProduct(@PathVariable Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product " + id + " does not exist"));
+        userService.getUsers().forEach(user -> user.getProductDiscounts().remove(id));
+        productRepository.delete(product);
+    }
+
     // ---------- contact messages ----------
 
     @GetMapping("/messages")
@@ -244,7 +327,10 @@ public class AdminController {
                                Integer discountPercent) {
     }
 
-    record DiscountRequest(Integer discountPercent, List<Long> productIds) {
+    record DiscountRequest(Integer discountPercent) {
+    }
+
+    record ProductDiscountMapRequest(Map<Long, Integer> discounts) {
     }
 
     record ProductDiscountsRequest(Integer salePercent, Boolean memberDiscountEnabled) {
@@ -254,19 +340,19 @@ public class AdminController {
     }
 
     record MemberResponse(Long id, String name, String username, List<String> roles,
-                          int discountPercent, boolean discountEligible, List<Long> discountProductIds) {
+                          int discountPercent, boolean discountEligible, Map<Long, Integer> productDiscounts) {
         static MemberResponse from(User user) {
             return new MemberResponse(user.getId(), user.getName(), user.getUsername(),
                     user.getRoles().stream().map(Role::getName).sorted().toList(),
                     user.getEffectiveDiscountPercent(), user.isDiscountEligible(),
-                    user.getDiscountProductIds().stream().sorted().toList());
+                    user.isDiscountEligible() ? new TreeMap<>(user.getProductDiscounts()) : Map.of());
         }
     }
 
     record CreateCategoryRequest(String categoryName) {
     }
 
-    record CategoryResponse(Long id, String categoryName) {
+    record CategoryResponse(Long id, String categoryName, long productCount) {
     }
 
     record CreateProductRequest(String name, String sku, String description, BigDecimal unitPrice,

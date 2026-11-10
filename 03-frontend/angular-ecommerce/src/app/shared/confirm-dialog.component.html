@@ -1,0 +1,73 @@
+<dialog
+  #dialog
+  class="m-auto w-[calc(100%-2rem)] max-w-md rounded-3xl bg-white p-0 text-ink shadow-2xl backdrop:bg-ink/50"
+  aria-labelledby="confirm-title"
+  aria-describedby="confirm-message"
+  (cancel)="onCancel($event)"
+  (click)="onDialogClick($event)"
+>
+  @if (confirm.request(); as request) {
+    <div class="p-6 sm:p-7">
+      <div class="flex items-start gap-4">
+        <span
+          class="grid size-11 shrink-0 place-items-center rounded-full"
+          [class]="request.tone === 'primary' || !request.tone ? 'bg-sage text-pine' : 'bg-danger/10 text-danger'"
+          aria-hidden="true"
+        >
+          @if (request.tone === 'danger') {
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" class="size-5">
+              <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          } @else if (request.tone === 'error') {
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="size-5">
+              <path d="M10 5.5v5.5M10 14.5v.01" stroke-linecap="round" />
+            </svg>
+          } @else {
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" class="size-5">
+              <path d="M4 10.5l3.5 3.5L16 6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          }
+        </span>
+        <div class="min-w-0">
+          <h2
+            id="confirm-title"
+            class="font-display text-xl font-bold"
+            [class.text-danger]="request.tone === 'error'"
+          >
+            {{ request.title }}
+          </h2>
+          @if (request.message) {
+            <p id="confirm-message" class="mt-1.5 text-sm text-ink-soft">{{ request.message }}</p>
+          }
+        </div>
+      </div>
+
+      @if (request.items?.length) {
+        <ul
+          class="mt-5 max-h-56 divide-y divide-line overflow-y-auto rounded-xl border border-line text-sm"
+        >
+          @for (item of request.items; track $index) {
+            <li class="px-3 py-2">{{ item }}</li>
+          }
+        </ul>
+      }
+
+      <div class="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        @if (!request.infoOnly) {
+          <button type="button" class="btn-secondary" (click)="confirm.close(false)">
+            {{ request.cancelText || 'Cancel' }}
+          </button>
+        }
+        <button
+          type="button"
+          autofocus
+          class="inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+          [class]="request.tone === 'danger' ? 'bg-danger hover:bg-danger/90' : request.tone === 'error' ? 'bg-ink hover:bg-ink/85' : 'bg-pine hover:bg-pine-dark'"
+          (click)="confirm.close(true)"
+        >
+          {{ request.confirmText || 'Confirm' }}
+        </button>
+      </div>
+    </div>
+  }
+</dialog>

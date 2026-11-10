@@ -21,6 +21,7 @@ import { CheckoutService } from '../../services/checkout.service';
 import { PricingService } from '../../services/pricing';
 import { PurchaseResponse, PurchaseService } from '../../services/purchase.service';
 import { CheckoutValidators } from '../../validators/checkout-validators';
+import { ConfirmService } from '../../shared/confirm.service';
 
 @Component({
   selector: 'app-checkout',
@@ -36,6 +37,7 @@ export class CheckoutComponent implements OnInit {
   private purchaseService = inject(PurchaseService);
   private auth = inject(AuthService);
   private pricing = inject(PricingService);
+  private confirm = inject(ConfirmService);
 
   checkoutFormGroup!: FormGroup;
 
@@ -285,9 +287,22 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.checkoutFormGroup.invalid) {
       this.checkoutFormGroup.markAllAsTouched();
+      return;
+    }
+
+    const total = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+      this.totals.total
+    );
+    const confirmed = await this.confirm.ask({
+      title: 'Place this order?',
+      message: `You will pay ${total} for ${this.totalQuantity} ${this.totalQuantity === 1 ? 'item' : 'items'}.`,
+      confirmText: 'Place order',
+      tone: 'primary',
+    });
+    if (!confirmed) {
       return;
     }
 
