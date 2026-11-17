@@ -1,85 +1,52 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { Store } from '@ngrx/store';
 
 import { CartItem } from '../common/cart-item';
+import { Product } from '../common/product';
+import { CartActions } from '../store/cart/cart.actions';
+import { cartFeature } from '../store/cart/cart.feature';
 
+/**
+ * Facade over the NgRx cart store.
+ * Components read signals and call methods here; they don't know about actions or selectors,
+ * so the store can change without touching the UI.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class CartService {
-  cartItems: CartItem[] = [];
+  private store = inject(Store);
 
-  totalPrice: Subject<number> = new BehaviorSubject<number>(0);
-  totalQuantity: Subject<number> = new BehaviorSubject<number>(0);
+  /** cart lines in the order they were added */
+  readonly items = this.store.selectSignal(cartFeature.selectAll);
+  readonly totalQuantity = this.store.selectSignal(cartFeature.selectTotalQuantity);
+  /** at regular catalog prices; use PricingService.totals() for the amount to pay */
+  readonly totalPrice = this.store.selectSignal(cartFeature.selectTotalPrice);
 
-  addToCart(theCartItem: CartItem) {
-    // check if we already have the item in our cart
-    const existingCartItem = this.cartItems.find(
-      (tempCartItem) => tempCartItem.id === theCartItem.id
-    );
+  private entities = this.store.selectSignal(cartFeature.selectEntities);
 
-    if (existingCartItem) {
-      // increment the quantity
-      existingCartItem.quantity++;
-    } else {
-      // just add the item to the array
-      this.cartItems.push(theCartItem);
-    }
-
-    // compute cart total price and total quantity
-    this.computeCartTotals();
+  addToCart(product: Product): void {
+    this.store.dispatch(CartActions.itemAdded({ item: { ...new CartItem(product) } }));
   }
 
-  computeCartTotals() {
-    let totalPriceValue = 0;
-    let totalQuantityValue = 0;
-
-    for (const currentCartItem of this.cartItems) {
-      totalPriceValue += currentCartItem.quantity * currentCartItem.unitPrice;
-      totalQuantityValue += currentCartItem.quantity;
-    }
-
-    // publish the new values ... all subscribers will receive the new data
-    this.totalPrice.next(totalPriceValue);
-    this.totalQuantity.next(totalQuantityValue);
-
-    // log cart data just for debugging purposes
-    this.logCartData(totalPriceValue, totalQuantityValue);
+  increment(id: string): void {
+    this.store.dispatch(CartActions.quantityIncreased({ id }));
   }
 
-  logCartData(totalPriceValue: number, totalQuantityValue: number) {
-    console.log('Contents of the cart');
-    for (const tempCartItem of this.cartItems) {
-      const subTotalPrice = tempCartItem.quantity * tempCartItem.unitPrice;
-      console.log(
-        `name: ${tempCartItem.name}, quantity=${tempCartItem.quantity}, unitPrice=${tempCartItem.unitPrice}, subTotalPrice=${subTotalPrice}`
-      );
-    }
-
-    console.log(
-      `totalPrice: ${totalPriceValue.toFixed(2)}, totalQuantity: ${totalQuantityValue}`
-    );
-    console.log('----');
+  /** removes the line when the quantity drops to 0 */
+  decrement(id: string): void {
+    this.store.dispatch(CartActions.quantityDecreased({ id }));
   }
 
-  decrementQuantity(theCartItem: CartItem) {
-    theCartItem.quantity--;
-
-    if (theCartItem.quantity === 0) {
-      this.remove(theCartItem);
-    } else {
-      this.computeCartTotals();
-    }
+  remove(id: string): void {
+    this.store.dispatch(CartActions.itemRemoved({ id }));
   }
 
-  remove(theCartItem: CartItem) {
-    const itemIndex = this.cartItems.findIndex(
-      (tempCartItem) => tempCartItem.id === theCartItem.id
-    );
+  clear(): void {
+    this.store.dispatch(CartActions.cleared());
+  }
 
-    if (itemIndex > -1) {
-      this.cartItems.splice(itemIndex, 1);
-      this.computeCartTotals();
-    }
+  quantityOf(id: string | undefined): number {
+    return id ? (this.entities()[id]?.quantity ?? 0) : 0;
   }
 }

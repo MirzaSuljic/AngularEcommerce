@@ -18,17 +18,29 @@ An online shop for developer books and gear: product catalog with categories, se
 ## Features
 
 - Catalog: sidebar with categories and product counts, search, pagination, product details
-- Cart and checkout; prices are calculated on the backend
+- Cart (NgRx store, kept after a page refresh) and checkout; prices are calculated on the backend
 - Sales per product for everyone, member discounts per user (all products or selected ones), stacked on the sale price
 - JWT login, settings page (change name and password, see own discounts)
 - Admin panel: products (create, delete, upload image, sale %), categories, members (create, delete, discounts), contact messages
 - About and contact pages
 
+## State management (NgRx)
+
+The cart lives in an NgRx store (`src/app/store/cart/`):
+
+- **Actions** (`cart.actions.ts`): item added, quantity increased/decreased, item removed, cart cleared
+- **Reducer and selectors** (`cart.feature.ts`): `createFeature` with `@ngrx/entity`; selectors for all lines, total quantity and total price
+- **Persistence** (`cart.storage.ts`): a feature meta-reducer saves the cart to `localStorage`, so it survives a page refresh; a broken saved value is ignored
+- **Facade** (`services/cart.service.ts`): components read signals (`items`, `totalQuantity`, `totalPrice`) and call methods like `addToCart()`; they never dispatch actions themselves
+- **Tests**: reducer, selectors and the meta-reducer are covered in `cart.feature.spec.ts`
+
+Why NgRx for the cart and signals elsewhere: the cart is shared by the header, product pages, the cart page and checkout, and every change should be traceable (Redux DevTools shows each action). Local UI state such as "Added to cart" feedback or form fields stays in the components.
+
 ## Tech stack
 
 | Part | Technology | Hosting |
 |---|---|---|
-| Frontend | Angular 22, Tailwind CSS 4 | [Netlify](https://luv2shop-ex.netlify.app/) |
+| Frontend | Angular 22, NgRx 22 (store, entity), Tailwind CSS 4 | [Netlify](https://luv2shop-ex.netlify.app/) |
 | Backend | Spring Boot 4, Java 21, Spring Data REST, Spring Security, JWT | [Render](https://luv2shop-api.onrender.com/api/catalog/category-counts) (Docker) |
 | Database | PostgreSQL | Neon |
 

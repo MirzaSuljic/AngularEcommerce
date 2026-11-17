@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/cor
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { take } from 'rxjs/operators';
 
-import { CartItem } from '../../common/cart-item';
 import { Product } from '../../common/product';
 import { CartService } from '../../services/cart.service';
 import { PricingService } from '../../services/pricing';
@@ -163,7 +162,7 @@ export class ProductListComponent implements OnInit {
   }
 
   addToCart(theProduct: Product) {
-    this.cartService.addToCart(new CartItem(theProduct));
+    this.cartService.addToCart(theProduct);
 
     this.justAddedId = theProduct.id;
     clearTimeout(this.justAddedTimer);

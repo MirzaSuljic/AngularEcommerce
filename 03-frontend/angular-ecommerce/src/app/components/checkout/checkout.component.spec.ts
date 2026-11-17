@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideCartStore } from '../../store/cart/provide-cart-store';
 import { CheckoutComponent } from './checkout.component';
 
 describe('CheckoutComponent', () => {
@@ -12,6 +13,7 @@ describe('CheckoutComponent', () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideCartStore(),
       ],
     }).compileComponents();
   });

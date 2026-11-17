@@ -1,10 +1,10 @@
 <div class="page pt-10 sm:pt-14">
   <h1 class="font-display text-5xl font-extrabold tracking-tight sm:text-6xl">Your cart</h1>
 
-  @if (cartItems.length > 0) {
+  @if (cartItems().length > 0) {
     <div class="mt-8 grid gap-10 lg:grid-cols-[1fr_22rem]">
       <ul class="divide-y divide-line border-y border-line">
-        @for (tempCartItem of cartItems; track tempCartItem.id) {
+        @for (tempCartItem of cartItems(); track tempCartItem.id) {
           <li class="flex gap-4 py-5 sm:gap-6">
             <a
               routerLink="/products/{{ tempCartItem.id }}"
@@ -105,7 +105,7 @@
         <dl class="mt-6 space-y-3 text-sm">
           <div class="flex justify-between">
             <dt class="text-white/70">Items</dt>
-            <dd class="font-semibold tabular-nums">{{ totalQuantity }}</dd>
+            <dd class="font-semibold tabular-nums">{{ totalQuantity() }}</dd>
           </div>
           <div class="flex justify-between">
             <dt class="text-white/70">Subtotal</dt>

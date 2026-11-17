@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { CartItem } from '../../common/cart-item';
 import { Product } from '../../common/product';
 import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
@@ -20,7 +19,6 @@ export class ProductDetailsComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   product!: Product;
-  quantityInCart = 0;
   justAdded = false;
   private justAddedTimer?: ReturnType<typeof setTimeout>;
 
@@ -35,21 +33,19 @@ export class ProductDetailsComponent implements OnInit {
 
     this.productService.getProduct(theProductId).subscribe((data) => {
       this.product = data;
-      this.updateQuantityInCart();
     });
   }
 
   addToCart() {
-    this.cartService.addToCart(new CartItem(this.product));
-    this.updateQuantityInCart();
+    this.cartService.addToCart(this.product);
 
     this.justAdded = true;
     clearTimeout(this.justAddedTimer);
     this.justAddedTimer = setTimeout(() => (this.justAdded = false), 1500);
   }
 
-  private updateQuantityInCart() {
-    const item = this.cartService.cartItems.find((x) => x.id === this.product?.id);
-    this.quantityInCart = item?.quantity ?? 0;
+  /** how many of this product are already in the cart */
+  get quantityInCart(): number {
+    return this.cartService.quantityOf(this.product?.id);
   }
 }

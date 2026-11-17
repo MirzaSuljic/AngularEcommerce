@@ -41,8 +41,13 @@ export class CheckoutComponent implements OnInit {
 
   checkoutFormGroup!: FormGroup;
 
-  totalPrice: number = 0;
-  totalQuantity: number = 0;
+  /** regular-price total and item count, read from the cart store */
+  get totalPrice(): number {
+    return this.cartService.totalPrice();
+  }
+  get totalQuantity(): number {
+    return this.cartService.totalQuantity();
+  }
 
   creditCardMonths: number[] = [];
   creditCardYears: number[] = [];
@@ -58,19 +63,17 @@ export class CheckoutComponent implements OnInit {
 
   /** subtotal at regular prices, savings (sales and member discount) and the amount to pay */
   get totals() {
-    return this.pricing.totals(this.cartService.cartItems);
+    return this.pricing.totals(this.cartService.items());
   }
 
   get cartItems(): CartItem[] {
-    return this.cartService.cartItems;
+    return this.cartService.items();
   }
 
   shippingAddressStates: State[] = [];
   billingAddressStates: State[] = [];
 
   ngOnInit(): void {
-    this.reviewCartDetails();
-
     this.auth.user$.subscribe((user) => (this.loggedIn = !!user));
     this.auth.refreshUser();
 
@@ -169,15 +172,6 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  reviewCartDetails() {
-    this.cartService.totalPrice.subscribe(
-      (totalPrice) => (this.totalPrice = totalPrice)
-    );
-    this.cartService.totalQuantity.subscribe(
-      (totalQuantity) => (this.totalQuantity = totalQuantity)
-    );
-  }
-
   get firstName() {
     return this.checkoutFormGroup.get('customer.firstName');
   }
@@ -248,7 +242,7 @@ export class CheckoutComponent implements OnInit {
 
     const currentYear: number = new Date().getFullYear();
 
-    const selectedYear: number = Number(
+    const selectedYear = Number(
       creditCardFormGroup?.value.expirationYear
     );
 
@@ -312,7 +306,7 @@ export class CheckoutComponent implements OnInit {
       totalPrice: this.totals.total,
     };
 
-    const cartItems = this.cartService.cartItems;
+    const cartItems = this.cartService.items();
 
     // const orderItems: OrderItem[] = [];
     // for (let i = 0; i < cartItems.length; i++) {
@@ -367,9 +361,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   resetCart() {
-    this.cartService.cartItems = [];
-    this.cartService.totalPrice.next(0);
-    this.cartService.totalQuantity.next(0);
+    this.cartService.clear();
 
     this.checkoutFormGroup.reset();
   }
@@ -399,7 +391,7 @@ export class CheckoutComponent implements OnInit {
     const creditCardFormGroup = this.checkoutFormGroup.get('creditCard');
 
     const currentYear: number = new Date().getFullYear();
-    const selectedYear: number = Number(
+    const selectedYear = Number(
       creditCardFormGroup?.value.expirationYear
     );
 

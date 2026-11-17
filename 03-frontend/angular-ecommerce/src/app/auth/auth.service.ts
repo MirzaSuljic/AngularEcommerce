@@ -79,7 +79,11 @@ export class AuthService {
   /** Re-reads the profile, e.g. to pick up a discount an admin just changed. */
   refreshUser() {
     if (this.isAuthenticated()) {
-      this.loadUser().subscribe({ error: () => {} });
+      this.loadUser().subscribe({
+        error: () => {
+          // refresh failed (e.g. offline): keep showing the current user
+        },
+      });
     }
   }
 

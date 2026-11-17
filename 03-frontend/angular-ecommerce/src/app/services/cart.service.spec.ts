@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
-import { CartItem } from '../common/cart-item';
 import { Product } from '../common/product';
+import { provideCartStore } from '../store/cart/provide-cart-store';
 import { CartService } from './cart.service';
 
 function product(id: string, unitPrice: number): Product {
@@ -10,34 +10,39 @@ function product(id: string, unitPrice: number): Product {
 
 describe('CartService', () => {
   let service: CartService;
-  let totalPrice = 0;
-  let totalQuantity = 0;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({ providers: [provideCartStore()] });
     service = TestBed.inject(CartService);
-    service.totalPrice.subscribe((v) => (totalPrice = v));
-    service.totalQuantity.subscribe((v) => (totalQuantity = v));
   });
 
   it('should add items and compute totals', () => {
-    service.addToCart(new CartItem(product('1', 10)));
-    service.addToCart(new CartItem(product('1', 10)));
-    service.addToCart(new CartItem(product('2', 5.5)));
+    service.addToCart(product('1', 10));
+    service.addToCart(product('1', 10));
+    service.addToCart(product('2', 5.5));
 
-    expect(service.cartItems.length).toBe(2);
-    expect(totalQuantity).toBe(3);
-    expect(totalPrice).toBeCloseTo(25.5);
+    expect(service.items().length).toBe(2);
+    expect(service.totalQuantity()).toBe(3);
+    expect(service.totalPrice()).toBeCloseTo(25.5);
+    expect(service.quantityOf('1')).toBe(2);
   });
 
   it('should remove an item when its quantity drops to zero', () => {
-    const item = new CartItem(product('1', 10));
-    service.addToCart(item);
+    service.addToCart(product('1', 10));
 
-    service.decrementQuantity(service.cartItems[0]);
+    service.decrement('1');
 
-    expect(service.cartItems.length).toBe(0);
-    expect(totalQuantity).toBe(0);
-    expect(totalPrice).toBe(0);
+    expect(service.items().length).toBe(0);
+    expect(service.totalQuantity()).toBe(0);
+    expect(service.totalPrice()).toBe(0);
+  });
+
+  it('should clear the cart', () => {
+    service.addToCart(product('1', 10));
+    service.addToCart(product('2', 4));
+
+    service.clear();
+
+    expect(service.items()).toEqual([]);
   });
 });

@@ -22,34 +22,22 @@ export class CartDetailsComponent implements OnInit {
   private auth = inject(AuthService);
   readonly pricing = inject(PricingService);
 
-  cartItems: CartItem[] = [];
-  totalPrice = 0;
-  totalQuantity = 0;
+  readonly cartItems = this.cartService.items;
+  readonly totalQuantity = this.cartService.totalQuantity;
   loggedIn = false;
 
   /** subtotal at regular prices, savings and the amount to pay */
   get totals() {
-    return this.pricing.totals(this.cartItems);
+    return this.pricing.totals(this.cartItems());
   }
 
   ngOnInit(): void {
-    this.listCartDetails();
-
     this.auth.user$.subscribe((user) => (this.loggedIn = !!user));
     this.auth.refreshUser();
   }
 
-  listCartDetails() {
-    this.cartItems = this.cartService.cartItems;
-
-    this.cartService.totalPrice.subscribe((data) => (this.totalPrice = data));
-    this.cartService.totalQuantity.subscribe((data) => (this.totalQuantity = data));
-
-    this.cartService.computeCartTotals();
-  }
-
   incrementQuantity(theCartItem: CartItem) {
-    this.cartService.addToCart(theCartItem);
+    this.cartService.increment(theCartItem.id);
   }
 
   async decrementQuantity(theCartItem: CartItem) {
@@ -57,12 +45,12 @@ export class CartDetailsComponent implements OnInit {
     if (theCartItem.quantity === 1 && !(await this.askRemove(theCartItem))) {
       return;
     }
-    this.cartService.decrementQuantity(theCartItem);
+    this.cartService.decrement(theCartItem.id);
   }
 
   async remove(theCartItem: CartItem) {
     if (await this.askRemove(theCartItem)) {
-      this.cartService.remove(theCartItem);
+      this.cartService.remove(theCartItem.id);
     }
   }
 
